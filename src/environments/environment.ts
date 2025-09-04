@@ -1,0 +1,4 @@
+export const environment = {
+  production: false,
+  apiBase: 'http://localhost:3000' // ajusta si tu server corre en otro host/puerto
+};
