@@ -3,12 +3,13 @@ import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ReposService } from '../../services/repos.service';
 import { Repo } from '../../models/repo';
+import { RouterLink } from '@angular/router';
 import { ScanResult } from '../../models/scan-result';
 
 @Component({
   selector: 'app-repo-detail-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './repo-detail-page.component.html'
 })
 export class RepoDetailPageComponent {
