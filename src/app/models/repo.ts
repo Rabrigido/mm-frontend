@@ -3,6 +3,7 @@ export interface Repo {
   name: string;              // opcional según tu backend
   codePath?: string;         // donde quedó clonado
   scannedAt?: string;        // ISO string
+  fullName: string;
   stats?: {
     files: number;
     lines: number;

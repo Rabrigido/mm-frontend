@@ -7,7 +7,7 @@
   <div *ngIf="error()" class="text-red-600 mb-4">{{ error() }}</div>
 
   <div *ngIf="repo() as r" class="bg-white rounded-2xl border p-4">
-    <div class="text-lg font-semibold">{{ r.name || r.id }}</div>
+    <div class="text-lg font-semibold">{{ r.fullName || r.id }}</div>
     <div class="text-xs text-gray-500 break-all">{{ r.codePath }}</div>
     <div class="mt-3 grid md:grid-cols-3 gap-3 text-sm">
       <div class="bg-gray-50 rounded-xl p-3">
@@ -38,6 +38,13 @@
 
   <div *ngIf="scan() as s" class="mt-6 bg-white rounded-2xl border p-4">
     <h2 class="text-xl font-semibold mb-3">Resultado del scan</h2>
+
+        <button
+      class="px-3 py-1.5 rounded-lg bg-gray-800 text-white hover:bg-black"
+      (click)="downloadScanJson()"
+    >
+      Descargar JSON
+    </button>
     <div class="text-sm text-gray-700">
       <div class="mb-2"><strong>Repo ID:</strong> {{ s.repoId }}</div>
       <div class="mb-2"><strong>Scanned At:</strong> {{ s.scannedAt | date:'short' }}</div>

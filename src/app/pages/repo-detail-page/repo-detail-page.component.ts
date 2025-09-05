@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { ReposService } from '../../services/repos.service';
 import { Repo } from '../../models/repo';
 import { ScanResult } from '../../models/scan-result';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-repo-detail-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './repo-detail-page.component.html'
 })
 export class RepoDetailPageComponent {
@@ -42,4 +43,27 @@ export class RepoDetailPageComponent {
       error: (e) => { this.error.set(e?.error?.message ?? 'No se pudo ejecutar el scanner'); this.loading.set(false); }
     });
   }
+
+    // ⬇️ NUEVO: Descargar el JSON del scan actual
+  downloadScanJson() {
+    const s = this.scan();
+    if (!s) return;
+
+    const pretty = JSON.stringify(s, null, 2);
+    const blob = new Blob([pretty], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const safeDate = (s.scannedAt ? new Date(s.scannedAt) : new Date())
+      .toISOString().replace(/[:.]/g, '-');
+    const filename = `scan-${s.repoId}-${safeDate}.json`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
 }
