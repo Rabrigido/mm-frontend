@@ -4,12 +4,11 @@ import { CommonModule } from '@angular/common';
 import { ReposService } from '../../services/repos.service';
 import { Repo } from '../../models/repo';
 import { ScanResult } from '../../models/scan-result';
-import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-repo-detail-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './repo-detail-page.component.html'
 })
 export class RepoDetailPageComponent {
@@ -22,9 +21,16 @@ export class RepoDetailPageComponent {
   error = signal<string | null>(null);
   id = this.route.snapshot.paramMap.get('id')!;
 
+  objectKeys = (o: Record<string, unknown>) => Object.keys(o ?? {});
+
   ngOnInit() {
     this.load();
   }
+open = signal<Record<string, boolean>>({});
+toggle(key: string) {
+  const curr = this.open();
+  this.open.set({ ...curr, [key]: !curr[key] });
+}
 
   load() {
     this.loading.set(true);
@@ -35,16 +41,26 @@ export class RepoDetailPageComponent {
     });
   }
 
-  runScan() {
-    this.loading.set(true);
-    this.error.set(null);
-    this.reposService.scanRepo(this.id).subscribe({
-      next: (res) => { this.scan.set(res); this.loading.set(false); },
-      error: (e) => { this.error.set(e?.error?.message ?? 'No se pudo ejecutar el scanner'); this.loading.set(false); }
-    });
-  }
+runScan() {
+  this.loading.set(true);
+  this.error.set(null);
+  this.reposService.scanRepo(this.id).subscribe({
+    next: (res) => {
+      this.scan.set(res);
+      // Abre por defecto algunas secciones si existen
+      const mm: any = (res as any)?.modularityMetrics ?? {};
+      const entries = typeof mm === 'object' && mm ? Object.keys(mm) : [];
+      const defaults: Record<string, boolean> = {};
+      for (const k of entries) {
+        if (['files','classes-per-file','methods-per-file'].includes(k)) defaults[k] = true;
+      }
+      this.open.set(defaults);
+      this.loading.set(false);
+    },
+    error: (e) => { this.error.set(e?.error?.message ?? 'No se pudo ejecutar el scanner'); this.loading.set(false); }
+  });
+}
 
-    // ⬇️ NUEVO: Descargar el JSON del scan actual
   downloadScanJson() {
     const s = this.scan();
     if (!s) return;
@@ -65,5 +81,4 @@ export class RepoDetailPageComponent {
     a.remove();
     URL.revokeObjectURL(url);
   }
-
 }

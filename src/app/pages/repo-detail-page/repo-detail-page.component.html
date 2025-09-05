@@ -1,7 +1,7 @@
 <div class="max-w-4xl mx-auto p-6">
   <a routerLink="/repos" class="text-sm text-blue-600 hover:underline">← Volver</a>
 
-  <h1 class="text-2xl font-bold mt-2 mb-4">Repo</h1>
+  <h1 class="text-2xl font-bold mt-2 mb-4">Repo: {{ repo()?.fullName || repo()?.id }}</h1>
 
   <div *ngIf="loading()" class="text-gray-600 mb-4">Cargando…</div>
   <div *ngIf="error()" class="text-red-600 mb-4">{{ error() }}</div>
@@ -9,18 +9,16 @@
   <div *ngIf="repo() as r" class="bg-white rounded-2xl border p-4">
     <div class="text-lg font-semibold">{{ r.fullName || r.id }}</div>
     <div class="text-xs text-gray-500 break-all">{{ r.codePath }}</div>
-    <div class="mt-3 grid md:grid-cols-3 gap-3 text-sm">
-      <div class="bg-gray-50 rounded-xl p-3">
-        <div class="text-gray-500">Archivos</div>
-        <div class="text-xl font-bold">{{ r.stats?.files ?? '—' }}</div>
-      </div>
-      <div class="bg-gray-50 rounded-xl p-3">
-        <div class="text-gray-500">Líneas</div>
-        <div class="text-xl font-bold">{{ r.stats?.lines ?? '—' }}</div>
-      </div>
-      <div class="bg-gray-50 rounded-xl p-3">
-        <div class="text-gray-500">Imports / Exports</div>
-        <div class="text-xl font-bold">{{ r.stats?.imports ?? '—' }} / {{ r.stats?.exports ?? '—' }}</div>
+
+
+
+    <div class="mt-3">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs" *ngIf="r.stats?.byExtension as ext">
+        <div class="bg-gray-50 rounded-lg p-2" *ngFor="let k of objectKeys(ext)">
+          <div class="text-gray-500">{{ k }}</div>
+          <div class="font-semibold">{{ ext[k] }}</div>
+        </div>
+        <div *ngIf="!objectKeys(ext).length" class="text-gray-500">—</div>
       </div>
     </div>
 
@@ -28,70 +26,80 @@
       Último scan: {{ r.scannedAt | date:'short' }}
     </div>
 
-    <div class="mt-6">
+    <div class="mt-6 flex gap-2">
       <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white"
               (click)="runScan()" [disabled]="loading()">
         Ejecutar scanner
       </button>
+
     </div>
   </div>
 
-  <div *ngIf="scan() as s" class="mt-6 bg-white rounded-2xl border p-4">
-    <h2 class="text-xl font-semibold mb-3">Resultado del scan</h2>
-
-        <button
-      class="px-3 py-1.5 rounded-lg bg-gray-800 text-white hover:bg-black"
-      (click)="downloadScanJson()"
-    >
+  <!-- Resultado del scan, con modularityMetrics: unknown -->
+<div *ngIf="scan() as s" class="mt-6 bg-white rounded-2xl border p-4">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-xl font-semibold">Resultado del scan</h2>
+    <button class="px-3 py-1.5 rounded-lg bg-gray-800 text-white hover:bg-black" (click)="downloadScanJson()">
       Descargar JSON
     </button>
-    <div class="text-sm text-gray-700">
-      <div class="mb-2"><strong>Repo ID:</strong> {{ s.repoId }}</div>
-      <div class="mb-2"><strong>Scanned At:</strong> {{ s.scannedAt | date:'short' }}</div>
-      <div class="mb-3"><strong>Code Path:</strong> <span class="text-xs break-all">{{ s.codePath }}</span></div>
-
-      <div class="grid md:grid-cols-3 gap-3 mb-4">
-        <div class="bg-gray-50 rounded-xl p-3">
-          <div class="text-gray-500 text-xs">Archivos</div>
-          <div class="text-lg font-bold">{{ s.stats.files }}</div>
-        </div>
-        <div class="bg-gray-50 rounded-xl p-3">
-          <div class="text-gray-500 text-xs">Líneas</div>
-          <div class="text-lg font-bold">{{ s.stats.lines }}</div>
-        </div>
-        <div class="bg-gray-50 rounded-xl p-3">
-          <div class="text-gray-500 text-xs">Imports / Exports</div>
-          <div class="text-lg font-bold">{{ s.stats.imports }} / {{ s.stats.exports }}</div>
-        </div>
-      </div>
-
-      <div>
-        <h3 class="font-semibold mb-2">Modularity Metrics</h3>
-        <div class="grid md:grid-cols-3 gap-3">
-          <div class="bg-red-50 rounded-xl p-3">
-            <div class="text-red-700 font-semibold text-sm">Parse Errors</div>
-            <ul class="list-disc ml-5 text-xs mt-1">
-              <li *ngFor="let e of s.modularityMetrics['parse-errors']">{{ e }}</li>
-              <li *ngIf="!s.modularityMetrics['parse-errors']?.length" class="text-gray-500">Ninguno</li>
-            </ul>
-          </div>
-          <div class="bg-amber-50 rounded-xl p-3">
-            <div class="text-amber-700 font-semibold text-sm">Metric Errors</div>
-            <ul class="list-disc ml-5 text-xs mt-1">
-              <li *ngFor="let e of s.modularityMetrics['metric-errors']">{{ e }}</li>
-              <li *ngIf="!s.modularityMetrics['metric-errors']?.length" class="text-gray-500">Ninguno</li>
-            </ul>
-          </div>
-          <div class="bg-blue-50 rounded-xl p-3">
-            <div class="text-blue-700 font-semibold text-sm">Traverse Errors</div>
-            <ul class="list-disc ml-5 text-xs mt-1">
-              <li *ngFor="let e of s.modularityMetrics['traverse-errors']">{{ e }}</li>
-              <li *ngIf="!s.modularityMetrics['traverse-errors']?.length" class="text-gray-500">Ninguno</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-    </div>
   </div>
+
+  <!-- Stats -->
+  <div class="text-sm text-gray-700">
+    <div class="mb-2"><strong>Repo ID:</strong> {{ s.repoId }}</div>
+    <div class="mb-2"><strong>Scanned At:</strong> {{ s.scannedAt | date:'short' }}</div>
+    <div class="mb-3"><strong>Code Path:</strong> <span class="text-xs break-all">{{ s.codePath }}</span></div>
+
+    <div class="grid md:grid-cols-3 gap-3 mb-4">
+      <div class="bg-gray-50 rounded-xl p-3">
+        <div class="text-gray-500 text-xs">Archivos</div>
+        <div class="text-lg font-bold">{{ s.stats.files }}</div>
+      </div>
+      <div class="bg-gray-50 rounded-xl p-3">
+        <div class="text-gray-500 text-xs">Líneas</div>
+        <div class="text-lg font-bold">{{ s.stats.lines }}</div>
+      </div>
+      <div class="bg-gray-50 rounded-xl p-3">
+        <div class="text-gray-500 text-xs">Imports / Exports</div>
+        <div class="text-lg font-bold">{{ s.stats.imports }} / {{ s.stats.exports }}</div>
+      </div>
+    </div>
+
+<!-- MÉTRICAS DE LA LIB -->
+<div class="mt-6">
+  <h3 class="text-lg font-semibold mb-2">Modularity Metrics</h3>
+
+  <!-- 1) Tomamos modularityMetrics como mm -->
+  <ng-container *ngIf="s.modularityMetrics as mm; else noMM">
+
+    <!-- 2) Si mm es un objeto/colección, iteramos sus entradas con keyvalue -->
+    <ng-container *ngIf="(mm! | keyvalue) as entries; else rawJson">
+      <div class="space-y-2">
+        <div *ngFor="let e of entries" class="border rounded-xl">
+          <button class="w-full text-left px-3 py-2 font-semibold" (click)="toggle(e.key)">
+            {{ e.key }}
+            <span class="text-xs text-gray-500 ml-2">
+              (click para {{ (open()[e.key] ? 'ocultar' : 'ver') }})
+            </span>
+          </button>
+          <div *ngIf="open()[e.key]" class="border-t px-3 py-2 bg-gray-50">
+            <pre class="text-xs overflow-auto max-h-[28rem] bg-white rounded p-2">{{ e.value | json }}</pre>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- 3) Si mm no es un objeto enumerable, mostramos JSON crudo -->
+    <ng-template #rawJson>
+      <pre class="text-xs bg-gray-50 rounded-xl p-3 overflow-auto max-h-[32rem]">{{ mm | json }}</pre>
+    </ng-template>
+  </ng-container>
+
+  <ng-template #noMM>
+    <div class="text-gray-500 text-sm">La respuesta no incluyó métricas.</div>
+  </ng-template>
+</div>
+
+  </div>
+</div>
 </div>
