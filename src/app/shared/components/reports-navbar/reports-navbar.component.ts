@@ -4,7 +4,9 @@ import { NgFor, NgClass } from '@angular/common';
 export type ReportKey =
   | 'loc-sloc'
   | 'files'
-  ;
+  | 'cyclomatic';
+
+
 
 export interface ReportItem {
   key: ReportKey;
@@ -21,8 +23,8 @@ export interface ReportItem {
 export class ReportsNavbarComponent implements OnChanges {
   @Input() items: ReportItem[] = [
     { key: 'loc-sloc', label: 'LOC / SLOC' },
-    { key: 'files', label: 'Files' },
-
+    { key: 'files', label: 'Archivos' },
+    { key: 'cyclomatic', label: 'Complejidad Ciclomática' }, 
   ];
 
   @Input() selected: ReportKey | null = null;

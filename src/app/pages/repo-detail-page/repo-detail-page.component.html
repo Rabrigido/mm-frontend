@@ -28,9 +28,7 @@
     </div>
 
     <div class="mt-6 flex gap-2">
-      <button
-        class="px-4 py-2 rounded-xl bg-emerald-600 text-white disabled:opacity-60"
-        (click)="runScan()"
+      <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white disabled:opacity-60" (click)="runScan()"
         [disabled]="loading()">
         Ejecutar scanner
       </button>
@@ -41,9 +39,7 @@
   <div *ngIf="scan() as s" class="mt-6 bg-white rounded-2xl border p-4">
     <div class="flex items-center justify-between mb-3">
       <h2 class="text-xl font-semibold">Resultado del scan</h2>
-      <button
-        class="px-3 py-1.5 rounded-lg bg-gray-800 text-white hover:bg-black"
-        (click)="downloadScanJson()">
+      <button class="px-3 py-1.5 rounded-lg bg-gray-800 text-white hover:bg-black" (click)="downloadScanJson()">
         Descargar JSON
       </button>
     </div>
@@ -71,28 +67,27 @@
       </div>
     </div>
   </div>
-<div class="my-3">
-  <app-reports-navbar
-  [(selected)]="selectedReport">
-</app-reports-navbar>
-</div>
-<!-- 🔹 Contenedor del reporte seleccionado -->
-<div *ngIf="selectedReport() as rSel" class="my-6">
-  <ng-container [ngSwitch]="rSel">
+  <div class="my-3">
+    <app-reports-navbar [(selected)]="selectedReport">
+    </app-reports-navbar>
+  </div>
+  <!-- 🔹 Contenedor del reporte seleccionado -->
+  <div *ngIf="selectedReport() as rSel" class="my-6">
+    <ng-container [ngSwitch]="rSel">
 
 
-    <app-loc-sloc
-      *ngSwitchCase="'loc-sloc'"
-      [repoId]="repo()!.id">
-    </app-loc-sloc>
+      <app-loc-sloc *ngSwitchCase="'loc-sloc'" [repoId]="repo()!.id">
+      </app-loc-sloc>
 
-    <app-files-metric
-      *ngSwitchCase="'files'"
-      [repoId]="repo()!.id">
-    </app-files-metric>
+      <app-files-metric *ngSwitchCase="'files'" [repoId]="repo()!.id">
+      </app-files-metric>
+
+      <app-cyclomatic-metric *ngSwitchCase="'cyclomatic'" [repoId]="repo()!.id">
+      </app-cyclomatic-metric>
 
 
-  </ng-container>
-</div>
+
+    </ng-container>
+  </div>
 
 </div>
