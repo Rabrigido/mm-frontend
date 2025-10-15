@@ -11,7 +11,7 @@ import { Input } from '@angular/core';
 import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { Observable } from 'rxjs';
 
-import { MetricsComponent } from '../../components/metrics/metrics.component';
+
 
 type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
 
@@ -23,7 +23,7 @@ type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
   imports: [
     CommonModule,
     RouterLink,
-    MetricsComponent,
+
     LocSlocComponent,
     ReportsNavbarComponent,
 

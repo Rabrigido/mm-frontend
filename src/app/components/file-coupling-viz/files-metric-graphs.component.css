@@ -1,9 +1,0 @@
-.chart-host {
-  min-height: 22rem; /* ~ h-88 */
-}
-svg text {
-  fill: #374151; /* tailwind gray-700 aprox */
-}
-.bar {
-  opacity: 0.9;
-}
