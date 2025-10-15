@@ -51,10 +51,7 @@
     <div class="text-sm text-gray-700">
       <div class="mb-2"><strong>Repo ID:</strong> {{ s.repoId }}</div>
       <div class="mb-2"><strong>Scanned At:</strong> {{ s.scannedAt | date : 'short' }}</div>
-      <div class="mb-3">
-        <strong>Code Path:</strong>
-        <span class="text-xs break-all">{{ s.codePath }}</span>
-      </div>
+
 
       <div class="grid md:grid-cols-3 gap-3">
         <div class="bg-gray-50 rounded-xl p-3">
@@ -75,99 +72,11 @@
     </div>
   </div>
 
-  <!-- Card: Modularity Metrics (tabs + subtabs) -->
-  <div *ngIf="scan() as s" class="mt-6 bg-white rounded-2xl border p-4">
-    <h2 class="text-xl font-semibold mb-3">Modularity Metrics</h2>
+<app-loc-sloc [repoId]="this.repo()!.id"></app-loc-sloc>
 
-    <ng-container *ngIf="metricKeys().length; else noMM">
-      <!-- Tabs superiores -->
-      <div class="flex overflow-x-auto border-b rounded-t-lg mb-3">
-        <button
-          *ngFor="let key of metricKeys()"
-          type="button"
-          class="px-4 py-2 text-sm -mb-px border-b-2 whitespace-nowrap"
-          [ngClass]="activeMetric() === key
-            ? 'font-semibold border-emerald-600 text-emerald-700'
-            : 'border-transparent text-gray-500 hover:text-gray-700'"
-          (click)="selectMetric(key)">
-          {{ key }}
-        </button>
-      </div>
+  <app-metrics
+  [repoId]="this.repo()!.id"
+  [metrics]="this.metricKeys()">
+</app-metrics>
 
-      <!-- Subtabs -->
-      <div class="flex border-b mb-3">
-        <button
-          type="button"
-          class="px-4 py-2 text-sm -mb-px border-b-2"
-          [ngClass]="activeSubtab() === 'json'
-            ? 'font-semibold border-emerald-600 text-emerald-700'
-            : 'border-transparent text-gray-500 hover:text-gray-700'"
-          (click)="selectInnerTab('json')">
-          Ver JSON
-        </button>
-        <button
-          type="button"
-          class="px-4 py-2 text-sm -mb-px border-b-2"
-          [ngClass]="activeSubtab() === 'charts'
-            ? 'font-semibold border-emerald-600 text-emerald-700'
-            : 'border-transparent text-gray-500 hover:text-gray-700'"
-          (click)="selectInnerTab('charts')">
-          Ver gráficos
-        </button>
-      </div>
-
-      <!-- Panel JSON -->
-      <div *ngIf="activeSubtab() === 'json'" class="px-3 py-3">
-        <div class="rounded-lg border bg-white px-3 py-2">
-          <pre class="text-xs overflow-auto max-h-[28rem]">
-{{ getMetricValueByKey(s?.modularityMetrics, activeMetric()) | json }}
-          </pre>
-        </div>
-      </div>
-
-      <!-- Panel Gráficos: FILE-COUPLING -->
-      <div *ngIf="activeSubtab() === 'charts' && activeMetric() === 'file-coupling'" class="px-3 py-3">
-        <div class="rounded-lg border bg-white p-3">
-          <h4 class="text-base font-semibold mb-3">File Coupling Metrics</h4>
-          <app-file-coupling-graphs [data]="fileCouplingMetric!"></app-file-coupling-graphs>
-
-        </div>
-      </div>
-
-      <!-- Panel Gráficos genérico para otras métricas -->
-      <div *ngIf="activeSubtab() === 'charts'
-                  && activeMetric() !== 'files'
-                  && activeMetric() !== 'file-coupling'"
-           class="px-3 py-3">
-        <div class="rounded-lg border bg-white px-3 py-3">
-          <div [id]="'chart-'+activeMetric()" class="w-full h-72"></div>
-          <div class="text-sm text-gray-500 mt-2" *ngIf="chartStatus()[activeMetric()] === 'empty'">
-            No encontré datos numéricos directos para graficar esta métrica.
-          </div>
-          <div class="text-sm text-red-600 mt-2" *ngIf="chartStatus()[activeMetric()] === 'error'">
-            Hubo un problema al construir el gráfico.
-          </div>
-        </div>
-      </div>
-    </ng-container>
-
-    <ng-template #noMM>
-      <div class="text-gray-500 text-sm">La respuesta no incluyó métricas.</div>
-    </ng-template>
-  </div>
-
-  <!-- Card: Files graphs (abajo de todo) -->
-  <div *ngIf="scan() as s" class="mt-6 bg-white rounded-2xl border p-4">
-    <h2 class="text-xl font-semibold mb-3">Files — Gráficos</h2>
-
-    <ng-container *ngIf="hasFilesMetric(); else noFiles">
-<app-files-metric-graphs
-  [data]="getMetricValueByKey(s?.modularityMetrics, '../../../../files')">
-</app-files-metric-graphs>
-    </ng-container>
-
-    <ng-template #noFiles>
-      <div class="text-sm text-gray-500">No se encontró la métrica <code>files</code> en este scan.</div>
-    </ng-template>
-  </div>
 </div>

@@ -1,0 +1,61 @@
+<div class="w-full">
+  <!-- Tabs -->
+  <div class="flex flex-wrap gap-2 border-b border-gray-200 mb-4">
+    @for (m of tabs(); track m; let i = $index) {
+      <button
+        class="px-4 py-2 rounded-t-lg text-sm font-medium transition
+               hover:bg-gray-100"
+        [class.bg-white]="activeIndex() === i"
+        [class.text-blue-600]="activeIndex() === i"
+        [class.border-b-2]="activeIndex() === i"
+        [class.border-blue-500]="activeIndex() === i"
+        (click)="selectTab(i)"
+        [title]="m"
+      >
+        {{ m }}
+      </button>
+    }
+  </div>
+
+  <!-- Toolbar -->
+  <div class="flex items-center gap-2 mb-3">
+    <div class="text-sm text-gray-600">
+      Repo: <span class="font-mono">{{ repoId }}</span> ·
+      Métrica: <span class="font-mono">{{ tabs()[activeIndex()] }}</span>
+    </div>
+    <button
+      class="ml-auto px-3 py-1.5 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700"
+      (click)="reloadActive()"
+    >
+      Recargar
+    </button>
+  </div>
+
+  <!-- Content -->
+  @if (tabs().length === 0) {
+    <p class="text-gray-500">No hay métricas para mostrar.</p>
+  } @else {
+    @let current = tabs()[activeIndex()];
+    @let st = stateOf(current);
+
+    @if (st.loading) {
+      <div class="p-4 rounded-lg bg-gray-50 border border-gray-200">
+        <span class="animate-pulse">Cargando {{ current }}…</span>
+      </div>
+    } @else if (st.error) {
+      <div class="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700">
+        {{ st.error }}
+      </div>
+    } @else if (st.data) {
+      <div class="rounded-lg border border-gray-200 overflow-hidden">
+        <pre class="p-4 bg-gray-900 text-gray-100 text-sm overflow-auto">
+{{ asPrettyJSON(st.data) }}
+        </pre>
+      </div>
+    } @else {
+      <div class="p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800">
+        Sin datos aún para <span class="font-mono">{{ current }}</span>.
+      </div>
+    }
+  }
+</div>

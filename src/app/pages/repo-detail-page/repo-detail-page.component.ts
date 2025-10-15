@@ -4,12 +4,15 @@ import { CommonModule } from '@angular/common';
 import { ReposService } from '../../services/repos.service';
 import { Repo } from '../../models/repo';
 import { ScanResult } from '../../models/scan-result';
-import { FileCouplingGraphsComponent } from '../../components/file-coupling/file-coupling-graphs.component';
-import { FileCouplingD3Component } from '../../components/file-coupling/file-coupling-d3.component';
+import { LocSlocComponent } from '../../components/loc-sloc/loc-sloc.component';
 import * as echarts from 'echarts';
-import { FilesMetricGraphsComponent } from '../../components/file-coupling-viz/files-metric-graphs.component';
+
 import { Input } from '@angular/core';
+
 import { Observable } from 'rxjs';
+
+import { MetricsComponent } from '../../components/metrics/metrics.component';
+
 type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
 
 
@@ -20,9 +23,9 @@ type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
   imports: [
     CommonModule,
     RouterLink,
-    FileCouplingGraphsComponent,
-    FileCouplingD3Component,
-    FilesMetricGraphsComponent,
+    MetricsComponent,
+    LocSlocComponent,
+
   ],
   templateUrl: './repo-detail-page.component.html',
 })
