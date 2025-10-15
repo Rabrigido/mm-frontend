@@ -71,12 +71,28 @@
       </div>
     </div>
   </div>
+<div class="my-3">
+  <app-reports-navbar
+  [(selected)]="selectedReport">
+</app-reports-navbar>
+</div>
+<!-- 🔹 Contenedor del reporte seleccionado -->
+<div *ngIf="selectedReport() as rSel" class="my-6">
+  <ng-container [ngSwitch]="rSel">
 
-<app-loc-sloc [repoId]="this.repo()!.id"></app-loc-sloc>
 
-  <app-metrics
-  [repoId]="this.repo()!.id"
-  [metrics]="this.metricKeys()">
-</app-metrics>
+    <app-loc-sloc
+      *ngSwitchCase="'loc-sloc'"
+      [repoId]="repo()!.id">
+    </app-loc-sloc>
+
+    <app-metrics
+      *ngSwitchCase="'metrics'"
+      [repoId]="repo()!.id"
+      [metrics]="metricKeys()">
+    </app-metrics>
+
+  </ng-container>
+</div>
 
 </div>

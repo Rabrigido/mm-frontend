@@ -6,9 +6,9 @@ import { Repo } from '../../models/repo';
 import { ScanResult } from '../../models/scan-result';
 import { LocSlocComponent } from '../../components/loc-sloc/loc-sloc.component';
 import * as echarts from 'echarts';
-
+import { ReportsNavbarComponent, ReportKey  } from '../../shared/components/reports-navbar/reports-navbar.component';
 import { Input } from '@angular/core';
-
+import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { Observable } from 'rxjs';
 
 import { MetricsComponent } from '../../components/metrics/metrics.component';
@@ -25,6 +25,7 @@ type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
     RouterLink,
     MetricsComponent,
     LocSlocComponent,
+    ReportsNavbarComponent,
 
   ],
   templateUrl: './repo-detail-page.component.html',
@@ -44,7 +45,8 @@ export class RepoDetailPageComponent implements OnDestroy {
     'functions-per-file',
   ];
 
-
+  // acá tienes tu signal de selección
+  selectedReport = signal<ReportKey | null>(null);
 
   // Estado general
   repo = signal<Repo | null>(null);
