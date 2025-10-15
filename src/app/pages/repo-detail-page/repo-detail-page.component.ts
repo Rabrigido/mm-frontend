@@ -10,7 +10,7 @@ import { ReportsNavbarComponent, ReportKey  } from '../../shared/components/repo
 import { Input } from '@angular/core';
 import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { Observable } from 'rxjs';
-
+import { FilesMetricComponent } from '../../components/files-metric/files-metric.component';
 
 
 type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
@@ -23,7 +23,7 @@ type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
   imports: [
     CommonModule,
     RouterLink,
-
+    FilesMetricComponent,
     LocSlocComponent,
     ReportsNavbarComponent,
 

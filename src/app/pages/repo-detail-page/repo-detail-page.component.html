@@ -86,6 +86,11 @@
       [repoId]="repo()!.id">
     </app-loc-sloc>
 
+    <app-files-metric
+      *ngSwitchCase="'files'"
+      [repoId]="repo()!.id">
+    </app-files-metric>
+
 
   </ng-container>
 </div>
