@@ -3,8 +3,12 @@ import { NgFor, NgClass } from '@angular/common';
 
 export type ReportKey =
   | 'loc-sloc'
+  | 'cyclomatic-complexity'
+  | 'dependencies'
+  | 'architecture'
+  | 'duplication'
+
   | 'files'
-  | 'cyclomatic'
   | 'functions-per-file'
   | 'classes-per-file'
   ;
@@ -26,8 +30,14 @@ export interface ReportItem {
 export class ReportsNavbarComponent implements OnChanges {
   @Input() items: ReportItem[] = [
     { key: 'loc-sloc', label: 'LOC / SLOC' },
+    { key: 'cyclomatic-complexity', label: 'Cyclomatic complexity' },
+    { key: 'dependencies', label: 'Dependency graph' },
+    { key: 'architecture', label: 'Architecture' },
+    { key: 'duplication', label: 'Duplication' },
+ 
+
     { key: 'files', label: 'Archivos' },
-    { key: 'cyclomatic', label: 'Complejidad Ciclomática' },
+
     { key: 'functions-per-file', label: 'Funciones por Archivo' },
     { key: 'classes-per-file', label: 'Clases por Archivo' },
   ];
