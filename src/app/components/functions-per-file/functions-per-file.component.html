@@ -166,8 +166,22 @@
   </div>
 
   <app-functions-bar-chart
-  [title]="'Distribución de tipos de función'"
-  [rawResult]="rawResult()">
-</app-functions-bar-chart>
+    [title]="'Distribución de tipos de función'"
+    [rawResult]="rawResult()"
+  >
+  </app-functions-bar-chart>
 
+  <div class="mt-6">
+    <!-- Treemap -->
+
+    <!-- Sunburst con nombre de raíz custom-->
+    <functions-per-folder-graph
+      [data]="rawResult()"
+      chartType="sunburst"
+      rootName="src"
+    />
+    <div class="mt-2">
+      <functions-per-folder-graph [data]="rawResult()" chartType="treemap" />
+    </div>
+  </div>
 </div>

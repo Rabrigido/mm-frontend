@@ -10,6 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { MetricsService } from '../../services/metrics.service';
 import { FunctionsBarChartComponent } from './bar-chart/functions-bar-chart.component';
+import { FunctionsPerFolderGraphComponent } from './functions-per-folder-graph/functions-per-folder-graph.component';
 
 type AstLike = {
   type?: string;
@@ -42,7 +43,8 @@ type MetricResponse = {
   selector: 'app-functions-per-file',
   standalone: true,
   imports: [CommonModule,
-    FunctionsBarChartComponent
+    FunctionsBarChartComponent,
+    FunctionsPerFolderGraphComponent
   ],
   templateUrl: './functions-per-file.component.html',
   styleUrls: ['./functions-per-file.component.css'],
