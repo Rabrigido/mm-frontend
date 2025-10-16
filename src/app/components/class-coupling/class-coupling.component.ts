@@ -126,7 +126,7 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
       return;
     }
 
-    element.innerHTML = ''; // clear before drawing
+    element.innerHTML = '';
 
     const width = element.clientWidth || 800;
     const height = 500;
@@ -138,7 +138,6 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
       .style('border', '1px solid #ccc')
       .style('background', '#f9f9f9');
 
-    // Create a group for zoom/pan
     const g = svg.append('g');
 
     this.simulation = d3.forceSimulation(nodes)
@@ -150,7 +149,6 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collide', d3.forceCollide<NodeData>(30));
 
-    // Zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
         g.attr('transform', event.transform.toString());
@@ -169,7 +167,6 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
       .attr('stroke-width', d => Math.sqrt(d.value) * 2 || 1)
       .attr('marker-end', 'url(#arrowhead)');
 
-    // Arrowhead marker
     svg.append('defs')
       .append('marker')
       .attr('id', 'arrowhead')
@@ -198,19 +195,38 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
       .attr('stroke', '#333')
       .attr('stroke-width', 1.5)
       .style('cursor', 'grab')
-      .on('mouseenter', function () {
-        d3.select<SVGCircleElement, NodeData>(this)
-          .transition()
-          .duration(200)
-          .attr('r', (d: NodeData) => 30 + Math.sqrt((d.fanIn) + d.fanOut))
-          .attr('stroke-width', 3);
+      .on('mouseenter', function (event: MouseEvent, d: NodeData) {
+        // Highlight connected nodes and links
+        const connectedNodeIds = new Set<string>();
+        connectedNodeIds.add(d.id);
+
+        // Find all connected nodes
+        links.forEach(link => {
+          const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
+          const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+
+          if (sourceId === d.id) {
+            connectedNodeIds.add(targetId);
+          }
+          if (targetId === d.id) {
+            connectedNodeIds.add(sourceId);
+          }
+        });
+
+        // Fade out non-connected nodes and links
+        node.attr('opacity', (nodeData) => connectedNodeIds.has(nodeData.id) ? 1 : 0.15);
+        link.attr('opacity', (linkData) => {
+          const sourceId = typeof linkData.source === 'string' ? linkData.source : linkData.source.id;
+          const targetId = typeof linkData.target === 'string' ? linkData.target : linkData.target.id;
+          return (sourceId === d.id || targetId === d.id) ? 1 : 0.05;
+        });
+        label.attr('opacity', (nodeData) => connectedNodeIds.has(nodeData.id) ? 1 : 0.15);
       })
       .on('mouseleave', function () {
-        d3.select<SVGCircleElement, NodeData>(this)
-          .transition()
-          .duration(200)
-          .attr('r', (d: NodeData) => 40 + Math.sqrt(d.fanIn + d.fanOut))
-          .attr('stroke-width', 2);
+        // Restore all nodes and links
+        node.attr('opacity', 1);
+        link.attr('opacity', 0.6);
+        label.attr('opacity', 1);
       })
       .call(
         d3.drag<SVGCircleElement, NodeData>()
@@ -256,7 +272,6 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
         .attr('y', d => d.y || 0);
     });
 
-    // Reset zoom button
     svg.append('text')
       .attr('x', 10)
       .attr('y', 25)
@@ -270,7 +285,6 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
           .call(zoom.transform as any, d3.zoomIdentity.translate(0, 0));
       });
 
-    // Also reset on double-click anywhere on SVG
     svg.on('dblclick.zoom', () => {
       svg.transition()
         .duration(750)
