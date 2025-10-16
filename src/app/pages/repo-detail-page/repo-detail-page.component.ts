@@ -13,6 +13,7 @@ import { Observable } from 'rxjs';
 import { FilesMetricComponent } from '../../components/files-metric/files-metric.component';
 import { CyclomaticMetricComponent } from '../../components/cyclomatic-metric/cyclomatic-metric.component';
 import { FunctionsPerFileComponent } from '../../components/functions-per-file/functions-per-file.component';
+import { ClassesPerFileComponent } from '../../components/classes-per-file/classes-per-file.component';
 
 type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
 
@@ -28,7 +29,8 @@ type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
     LocSlocComponent,
     ReportsNavbarComponent,
     CyclomaticMetricComponent,
-    FunctionsPerFileComponent
+    FunctionsPerFileComponent,
+    ClassesPerFileComponent
 
   ],
   templateUrl: './repo-detail-page.component.html',

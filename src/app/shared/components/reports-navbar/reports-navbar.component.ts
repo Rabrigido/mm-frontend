@@ -6,6 +6,7 @@ export type ReportKey =
   | 'files'
   | 'cyclomatic'
   | 'functions-per-file'
+  | 'classes-per-file'
   ;
 
 
@@ -28,6 +29,7 @@ export class ReportsNavbarComponent implements OnChanges {
     { key: 'files', label: 'Archivos' },
     { key: 'cyclomatic', label: 'Complejidad Ciclomática' },
     { key: 'functions-per-file', label: 'Funciones por Archivo' },
+    { key: 'classes-per-file', label: 'Clases por Archivo' },
   ];
 
   @Input() selected: ReportKey | null = null;
