@@ -9,6 +9,7 @@ interface CyclomaticData {
   byFile: Record<string, { complexity: number }>;
   total: number;
   fileCount: number;
+  average: number;  // Add this
 }
 
 @Component({
@@ -23,10 +24,18 @@ interface CyclomaticData {
       <div *ngIf="error()" class="text-red-500">{{ error() }}</div>
 
       <div *ngIf="!loading() && !error()" class="space-y-4">
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg">
-          <p class="text-sm text-gray-600">Complejidad Total</p>
-          <p class="text-3xl font-bold text-indigo-600">{{ total() }}</p>
-          <p class="text-xs text-gray-500 mt-1">en {{ fileCount() }} archivos</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg">
+            <p class="text-sm text-gray-600">Complejidad Total</p>
+            <p class="text-3xl font-bold text-indigo-600">{{ total() }}</p>
+            <p class="text-xs text-gray-500 mt-1">en {{ fileCount() }} archivos</p>
+          </div>
+          
+          <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg">
+            <p class="text-sm text-gray-600">Promedio</p>
+            <p class="text-3xl font-bold text-purple-600">{{ average() | number:'1.2-2' }}</p>
+            <p class="text-xs text-gray-500 mt-1">por archivo</p>
+          </div>
         </div>
 
         <div class="relative h-96">
@@ -45,11 +54,11 @@ export class CyclomaticMetricComponent implements OnInit, AfterViewInit {
   loading = signal(true);
   error = signal<string | null>(null);
   total = signal(0);
+  average = signal(0);  // Add this
   fileCount = signal(0);
 
   private chart: Chart | null = null;
   private chartData: { labels: string[]; data: number[] } = { labels: [], data: [] };
-  private dataLoaded = false;
 
   ngOnInit() {
     this.loading.set(true);
@@ -58,23 +67,19 @@ export class CyclomaticMetricComponent implements OnInit, AfterViewInit {
     this.metricsService.getCyclomatic(this.repoId).subscribe({
       next: (data: CyclomaticData) => {
         this.total.set(data.total);
+        this.average.set(data.average);  // Add this
         this.fileCount.set(data.fileCount);
 
-        // Get top 15 files by complexity
         const sorted = Object.entries(data.byFile)
           .sort(([, a], [, b]) => b.complexity - a.complexity)
           .slice(0, 15);
 
-        this.chartData.labels = sorted.map(([file]) => {
-          // Clean up the file path to show only the filename
-          return file.split('\\').pop()?.split('/').pop() || file;
-        });
+        this.chartData.labels = sorted.map(([file]) => 
+          file.split('\\').pop()?.split('/').pop() || file
+        );
         this.chartData.data = sorted.map(([, v]) => v.complexity);
-        
-        this.dataLoaded = true;
-        this.loading.set(false);
 
-        // Initialize chart after data is loaded
+        this.loading.set(false);
         setTimeout(() => this.initChart(), 100);
       },
       error: (err: unknown) => {
@@ -86,9 +91,7 @@ export class CyclomaticMetricComponent implements OnInit, AfterViewInit {
     });
   }
 
-  ngAfterViewInit() {
-    // Chart will be initialized in ngOnInit after data loads
-  }
+  ngAfterViewInit() {}
 
   private initChart() {
     if (!this.chartCanvas) return;
@@ -116,7 +119,7 @@ export class CyclomaticMetricComponent implements OnInit, AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        indexAxis: 'y', // Horizontal bar chart for better readability
+        indexAxis: 'y',
         plugins: {
           legend: { display: true, position: 'top' },
           title: { display: false },

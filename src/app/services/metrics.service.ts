@@ -53,6 +53,7 @@ export class MetricsService {
     total: number;
     byFile: Record<string, { complexity: number }>;
     fileCount: number;
+    average:number;
   }> {
     return this.http.get<{
       name: string;
@@ -60,6 +61,7 @@ export class MetricsService {
       total: number;
       byFile: Record<string, { complexity: number }>;
       fileCount: number;
+      average:number
     }>(`${this.base}/metrics/${repoId}/cyclomatic`);
   }
 
