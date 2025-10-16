@@ -101,7 +101,9 @@
     }
 
     <!-- Por ejemplo, mostrar árbol con todos los archivos -->
-<app-files-tree [paths]="filtered()" [height]="640" [nodeSize]="28" [indent]="160" />
+<files-tree
+[paths]="files()" />
+
 
   }
 </div>
