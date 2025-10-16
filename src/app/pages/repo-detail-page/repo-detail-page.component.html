@@ -83,12 +83,15 @@
       <app-functions-per-file *ngSwitchCase="'functions-per-file'" [repoId]="repo()!.id">
       </app-functions-per-file>
 
-      <app-cyclomatic-metric *ngSwitchCase="'cyclomatic'" [repoId]="repo()!.id">
+      <app-cyclomatic-metric *ngSwitchCase="'cyclomatic-complexity'" [repoId]="repo()!.id">
       </app-cyclomatic-metric>
 
 
       <app-classes-per-file *ngSwitchCase="'classes-per-file'" [repoId]="repo()!.id">
       </app-classes-per-file>
+
+      <function-coupling *ngSwitchCase="'function-coupling'" [repoId]="repo()!.id">
+      </function-coupling>
 
     </ng-container>
   </div>

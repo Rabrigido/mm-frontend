@@ -7,7 +7,7 @@ import { Observable } from 'rxjs';
 export class MetricsService {
   private http = inject(HttpClient);
   private base = environment.apiBase;
-     
+
 
   getMetric(repoId: string, metricName: string): Observable<any> {
     return this.http.get<any>(`${this.base}/metrics/${repoId}/${metricName}`);
@@ -29,9 +29,6 @@ export class MetricsService {
     }>(`${this.base}/metrics/${repoId}/loc-sloc`);
   }
 
-  getCyclomatic(repoId: string): Observable<any> {
-    return this.http.get<any>(`${this.base}/${repoId}/cyclomatic`);
-  }
 
   getDuplication(repoId: string): Observable<any> {
     return this.http.get<any>(`${this.base}/${repoId}/duplication`);
@@ -45,7 +42,6 @@ export class MetricsService {
     return this.http.get<any>(`${this.base}/${repoId}/architecture`);
   }
 
-  //getOtrametrica
 
   // src/app/services/metrics.service.ts
   getCyclomatic(repoId: string): Observable<{
@@ -63,6 +59,6 @@ export class MetricsService {
       fileCount: number;
     }>(`${this.base}/metrics/${repoId}/cyclomatic`);
   }
- 
+
 
 }
