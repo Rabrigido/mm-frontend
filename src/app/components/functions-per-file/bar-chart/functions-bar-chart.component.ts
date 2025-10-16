@@ -17,10 +17,14 @@ type AstLike = {
   async?: boolean;
   params?: any[];
 };
-
 type RawResult = Record<string, Record<string, AstLike>>;
 
-type BarDatum = { name: string; value: number };
+type StackedRow = {
+  category: 'Declaration' | 'Expression' | 'Arrow';
+  Async: number;
+  Sync: number;
+  total: number;
+};
 
 @Component({
   selector: 'app-functions-bar-chart',
@@ -30,28 +34,17 @@ type BarDatum = { name: string; value: number };
   styleUrls: ['./functions-bar-chart.component.css'],
 })
 export class FunctionsBarChartComponent implements AfterViewInit, OnChanges {
-  private destroyRef = inject(DestroyRef);
-
-  /**
-   * Opción A: pásame directamente los datos agregados
-   * ej: [{ name: 'Declaration', value: 120 }, ...]
-   */
-  @Input() data?: BarDatum[];
-
-  /**
-   * Opción B: pásame el result crudo de la métrica para que yo agregue.
-   * Si vienen ambos, se prioriza `data`.
-   */
+  @Input() title = 'Tipos de función (Async/Sync)';
+  /** Pásame el result crudo de la métrica (lo más simple) */
   @Input() rawResult?: RawResult;
+  /** Si prefieres, puedes pasar ya los totales por categoría (se ignora rawResult si esto viene). */
+  @Input() data?: StackedRow[];
 
-  /** Título opcional que se mostrará arriba del gráfico */
-  @Input() title = 'Tipos de función en el repositorio';
-
-  /** Margenes del gráfico */
   @Input() margin = { top: 30, right: 16, bottom: 40, left: 56 };
 
   @ViewChild('host', { static: true }) hostRef!: ElementRef<HTMLDivElement>;
 
+  private destroyRef = inject(DestroyRef);
   private svg?: d3.Selection<SVGSVGElement, unknown, null, undefined>;
   private g?: d3.Selection<SVGGElement, unknown, null, undefined>;
   private tooltip?: d3.Selection<HTMLDivElement, unknown, null, undefined>;
@@ -64,16 +57,13 @@ export class FunctionsBarChartComponent implements AfterViewInit, OnChanges {
   }
 
   ngOnChanges(_: SimpleChanges): void {
-    // si cambia input (data o rawResult) y ya existe el SVG, re-renderizar
     if (this.svg) this.render();
   }
 
   private setupResizeObserver() {
     this.resizeObs = new ResizeObserver(() => this.render());
     this.resizeObs.observe(this.hostRef.nativeElement);
-    this.destroyRef.onDestroy(() => {
-      this.resizeObs?.disconnect();
-    });
+    this.destroyRef.onDestroy(() => this.resizeObs?.disconnect());
   }
 
   private createBase() {
@@ -83,38 +73,43 @@ export class FunctionsBarChartComponent implements AfterViewInit, OnChanges {
 
     this.svg = d3.select(host).append('svg').attr('class', 'chart-svg');
     this.g = this.svg.append('g').attr('class', 'chart-inner');
-
-    this.tooltip = d3
-      .select(host)
-      .append('div')
-      .attr('class', 'tooltip')
-      .style('opacity', 0);
+    this.tooltip = d3.select(host).append('div').attr('class', 'tooltip').style('opacity', 0);
   }
 
-  private getAggregatedData(): BarDatum[] {
+  private aggregate(): StackedRow[] {
     if (this.data && this.data.length) return this.data;
 
-    const result = this.rawResult || {};
-    let decl = 0;
-    let expr = 0;
-    let arrow = 0;
+    const base: Record<StackedRow['category'], { Async: number; Sync: number }> = {
+      Declaration: { Async: 0, Sync: 0 },
+      Expression: { Async: 0, Sync: 0 },
+      Arrow: { Async: 0, Sync: 0 },
+    };
 
-    for (const file of Object.keys(result)) {
-      const fns = result[file] ?? {};
+    const res = this.rawResult || {};
+    for (const file of Object.keys(res)) {
+      const fns = res[file] ?? {};
       for (const fname of Object.keys(fns)) {
         const node = fns[fname] ?? {};
         const t = (node.type ?? '').toLowerCase();
-        if (t.includes('arrow')) arrow++;
-        else if (t.includes('declaration')) decl++;
-        else if (t.includes('expression')) expr++;
+        const isAsync = !!node.async;
+        let cat: StackedRow['category'] | null = null;
+
+        if (t.includes('arrow')) cat = 'Arrow';
+        else if (t.includes('declaration')) cat = 'Declaration';
+        else if (t.includes('expression')) cat = 'Expression';
+
+        if (cat) {
+          if (isAsync) base[cat].Async++;
+          else base[cat].Sync++;
+        }
       }
     }
 
-    return [
-      { name: 'Declaration', value: decl },
-      { name: 'Expression', value: expr },
-      { name: 'Arrow', value: arrow },
-    ];
+    return (['Declaration', 'Expression', 'Arrow'] as StackedRow['category'][]).map((category) => {
+      const Async = base[category].Async;
+      const Sync = base[category].Sync;
+      return { category, Async, Sync, total: Async + Sync };
+    });
   }
 
   private render() {
@@ -122,9 +117,8 @@ export class FunctionsBarChartComponent implements AfterViewInit, OnChanges {
 
     const host = this.hostRef.nativeElement;
     const { width: hostW } = host.getBoundingClientRect();
-    const width = Math.max(320, hostW);
-    const height = 280;
-
+    const width = Math.max(360, hostW);
+    const height = 300;
     const { top, right, bottom, left } = this.margin;
 
     this.svg.attr('width', width).attr('height', height);
@@ -133,106 +127,106 @@ export class FunctionsBarChartComponent implements AfterViewInit, OnChanges {
     const w = width - left - right;
     const h = height - top - bottom;
 
-    const data = this.getAggregatedData();
+    const rows = this.aggregate();
+    const keys = ['Async', 'Sync'] as const;
 
-    // escalas
+    // scales
     const x = d3
       .scaleBand<string>()
-      .domain(data.map((d) => d.name))
+      .domain(rows.map((d) => d.category))
       .range([0, w])
-      .padding(0.2);
+      .padding(0.25);
 
-    const maxV = d3.max(data, (d) => d.value) ?? 0;
-    const y = d3.scaleLinear().domain([0, Math.max(1, maxV)]).range([h, 0]).nice();
+    const y = d3
+      .scaleLinear()
+      .domain([0, Math.max(1, d3.max(rows, (d) => d.total) ?? 0)])
+      .range([h, 0])
+      .nice();
 
-    // ejes
+    const color = d3.scaleOrdinal<string>().domain(keys as unknown as string[]).range(['#6ea8fe', '#cfe2ff']);
+
+    // axes
     this.g.selectAll('.axis').remove();
-    this.g
-      .append('g')
-      .attr('class', 'axis axis-x')
-      .attr('transform', `translate(0,${h})`)
-      .call(d3.axisBottom(x));
+    this.g.append('g').attr('class', 'axis axis-x').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x));
+    this.g.append('g').attr('class', 'axis axis-y').call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('d') as any));
 
-    this.g
-      .append('g')
-      .attr('class', 'axis axis-y')
-      .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('d') as any));
-
-    // titulo
+    // title
     this.g.selectAll('.title').remove();
-    this.g
-      .append('text')
-      .attr('class', 'title')
-      .attr('x', 0)
-      .attr('y', -8)
-      .text(this.title);
+    this.g.append('text').attr('class', 'title').attr('x', 0).attr('y', -8).text(this.title);
 
-    // barras
-    const bars = this.g.selectAll<SVGRectElement, BarDatum>('.bar').data(data, (d: any) => d.name);
+    // stack data
+    const stack = d3.stack<StackedRow>().keys(keys as unknown as string[]).value((d, key) => (d as any)[key]);
+    const series = stack(rows);
 
-    bars.exit().remove();
-
+    // groups per key
     const t = this.svg.transition().duration(350);
+    this.g.selectAll('.layer').remove();
+    const layer = this.g.selectAll('.layer').data(series, (s: any) => s.key as any);
+    const layerEnter = layer.enter().append('g').attr('class', 'layer').attr('fill', (d: any) => color(d.key)!);
 
-    bars
-      .transition(t as any)
-      .attr('x', (d) => x(d.name)!)
-      .attr('y', (d) => y(d.value))
-      .attr('width', x.bandwidth())
-      .attr('height', (d) => h - y(d.value));
+    // rects
+    const rects = layerEnter
+      .selectAll('rect')
+      .data((d: any) => d, (dp: any) => (dp.data as StackedRow).category);
 
-    bars
+    rects
       .enter()
       .append('rect')
-      .attr('class', 'bar')
-      .attr('rx', 6)
-      .attr('ry', 6)
-      .attr('x', (d) => x(d.name)!)
+      .attr('x', (d: any) => x(d.data.category)!)
       .attr('y', h)
       .attr('width', x.bandwidth())
       .attr('height', 0)
-      .on('mousemove', (event, d) => this.showTooltip(event, d))
-      .on('mouseleave', () => this.hideTooltip())
+      .on('mousemove', (event: MouseEvent, d: any) => {
+        const key = (d3.select((event.currentTarget as any).parentNode).datum() as any).key as 'Async' | 'Sync';
+        const val = d.data[key];
+        const total = d.data.total;
+        const pct = total ? Math.round((val / total) * 100) : 0;
+        const [px, py] = d3.pointer(event, this.hostRef.nativeElement);
+        this.tooltip!
+          .style('opacity', 1)
+          .style('left', `${px + 10}px`)
+          .style('top', `${py - 10}px`)
+          .html(`
+            <div class="tt-name">${d.data.category} — ${key}</div>
+            <div class="tt-val"><strong>${val}</strong> funciones (${pct}%)</div>
+            <div class="tt-sub">Total categoría: ${total}</div>
+          `);
+      })
+      .on('mouseleave', () => this.tooltip?.style('opacity', 0))
       .transition(t as any)
-      .attr('y', (d) => y(d.value))
-      .attr('height', (d) => h - y(d.value));
+      .attr('y', (d: any) => y(d[1]))
+      .attr('height', (d: any) => Math.max(0, y(d[0]) - y(d[1])));
 
-    // labels numéricos en las barras
-    const labels = this.g.selectAll<SVGTextElement, BarDatum>('.bar-label').data(data, (d: any) => d.name);
-    labels.exit().remove();
-
-    labels
-      .transition(t as any)
-      .attr('x', (d) => (x(d.name)! + x.bandwidth() / 2))
-      .attr('y', (d) => y(d.value) - 6)
-      .text((d) => d.value.toString());
-
-    labels
+    // labels de total arriba de cada barra
+    this.g.selectAll('.bar-total').remove();
+    this.g
+      .selectAll('.bar-total')
+      .data(rows)
       .enter()
       .append('text')
-      .attr('class', 'bar-label')
+      .attr('class', 'bar-total')
       .attr('text-anchor', 'middle')
-      .attr('x', (d) => (x(d.name)! + x.bandwidth() / 2))
-      .attr('y', h - 6)
-      .text((d) => d.value.toString())
-      .transition(t as any)
-      .attr('y', (d) => y(d.value) - 6);
+      .attr('x', (d) => x(d.category)! + x.bandwidth() / 2)
+      .attr('y', (d) => y(d.total) - 6)
+      .text((d) => (d.total > 0 ? d.total.toString() : ''));
+
+    // leyenda
+    this.drawLegend(color);
   }
 
-  private showTooltip(event: MouseEvent, d: BarDatum) {
-    if (!this.tooltip) return;
-    const [px, py] = d3.pointer(event, this.hostRef.nativeElement);
-    this.tooltip
-      .style('opacity', 1)
-      .style('left', `${px + 10}px`)
-      .style('top', `${py - 10}px`)
-      .html(`
-        <div class="tt-name">${d.name}</div>
-        <div class="tt-val"><strong>${d.value}</strong> funciones</div>
-      `);
-  }
+  private drawLegend(color: d3.ScaleOrdinal<string, string>) {
+    // legend simple arriba-derecha
+    this.g!.selectAll('.legend').remove();
+    const legend = this.g!.append('g').attr('class', 'legend').attr('transform', 'translate(0,-22)');
 
-  private hideTooltip() {
-    this.tooltip?.style('opacity', 0);
+    const items = [
+      { key: 'Async', x: 220 },
+      { key: 'Sync', x: 320 },
+    ];
+
+    const it = legend.selectAll('g.item').data(items).enter().append('g').attr('class', 'item').attr('transform', (d) => `translate(${d.x},0)`);
+
+    it.append('rect').attr('width', 12).attr('height', 12).attr('y', -10).attr('rx', 2).attr('fill', (d) => color(d.key)!);
+    it.append('text').attr('x', 18).attr('y', 0).attr('alignment-baseline', 'middle').text((d) => d.key);
   }
 }

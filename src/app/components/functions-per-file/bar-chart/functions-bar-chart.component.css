@@ -1,7 +1,7 @@
 .chart-host {
   position: relative;
   width: 100%;
-  min-height: 280px;
+  min-height: 300px;
 }
 
 .chart-svg {
@@ -15,7 +15,6 @@
   font-size: 12px;
   fill: #444;
 }
-
 .axis path,
 .axis line {
   stroke: #ddd;
@@ -26,14 +25,7 @@
   fill: #111;
 }
 
-.bar {
-  fill: #7da2ff; /* usa color por defecto del user agent si prefieres */
-}
-.bar:hover {
-  fill: #5a86ff;
-}
-
-.bar-label {
+.bar-total {
   font-size: 12px;
   fill: #222;
 }
@@ -46,11 +38,6 @@
   padding: 6px 8px;
   border-radius: 6px;
   font-size: 12px;
-  transform: translate(-50%, -100%);
   box-shadow: 0 2px 8px rgba(0,0,0,.25);
   white-space: nowrap;
-}
-.tooltip .tt-name {
-  opacity: .9;
-  margin-bottom: 2px;
 }
