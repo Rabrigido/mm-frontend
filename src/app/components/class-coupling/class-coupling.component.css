@@ -1,0 +1,21 @@
+.graph {
+  width: 50%;
+  height: 400px;
+  border: 1px solid #ccc;
+  margin-bottom: 2rem;
+ 
+}
+canvas {
+  max-width: 500px;
+  height: 800px;
+  margin: 0 auto;
+  display: block;
+}
+div#coupling-metric {
+    display: flex;
+    gap: 1rem;
+}
+
+div#coupling-metric > * {
+    flex: 1;
+}

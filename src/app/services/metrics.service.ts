@@ -42,6 +42,9 @@ export class MetricsService {
     return this.http.get<any>(`${this.base}/${repoId}/architecture`);
   }
 
+  getClassCoupling(repoId: string): Observable<any> {
+    return this.http.get<any>(`${this.base}/metrics/${repoId}/class-coupling`);
+  }
 
   // src/app/services/metrics.service.ts
   getCyclomatic(repoId: string): Observable<{

@@ -12,6 +12,7 @@ export type ReportKey =
   | 'functions-per-file'
   | 'classes-per-file'
   | 'function-coupling'
+  | 'class-coupling'
   ;
 
 
@@ -35,6 +36,7 @@ export class ReportsNavbarComponent implements OnChanges {
     { key: 'dependencies', label: 'Dependency graph' },
     { key: 'architecture', label: 'Architecture' },
     { key: 'duplication', label: 'Duplication' },
+    
 
 
 
@@ -43,6 +45,7 @@ export class ReportsNavbarComponent implements OnChanges {
     { key: 'functions-per-file', label: 'Funciones por Archivo' },
     { key: 'classes-per-file', label: 'Clases por Archivo' },
     { key: 'function-coupling', label: 'Acoplamiento de Funciones' },
+    { key: 'class-coupling', label: 'Acoplamiento de Clases' },
   ];
 
   @Input() selected: ReportKey | null = null;
