@@ -37,9 +37,11 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
 
   loading = signal(false);
   error = signal<string | null>(null);
+  currentPage = signal(0);
 
   private chart: Chart | null = null;
   private simulation: d3.Simulation<NodeData, LinkData> | null = null;
+  private allNodes: NodeData[] = [];
 
   ngOnInit(): void {
     this.loading.set(true);
@@ -114,9 +116,12 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
       }
     }
 
-    const nodes = Array.from(nodesMap.values());
-    this.renderForceGraph(nodes, links);
-    this.renderBarChart(nodes);
+    this.allNodes = Array.from(nodesMap.values());
+    this.currentPage.set(0);
+    
+    // Only render graph once on initial load
+    this.renderForceGraph(this.allNodes, links);
+    this.renderBarChart(this.allNodes);
   }
 
   renderForceGraph(nodes: NodeData[], links: LinkData[]) {
@@ -326,9 +331,18 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
       this.chart.destroy();
     }
 
-    const labels = nodes.map(n => n.id);
-    const fanIn = nodes.map(n => n.fanIn);
-    const fanOut = nodes.map(n => n.fanOut);
+    const itemsPerPage = 10;
+    const sorted = nodes.sort((a, b) => (b.fanIn + b.fanOut) - (a.fanIn + a.fanOut));
+    
+    const startIdx = this.currentPage() * itemsPerPage;
+    const endIdx = startIdx + itemsPerPage;
+    const pageNodes = sorted.slice(startIdx, endIdx);
+
+    const labels = pageNodes.map(n => n.id);
+    const fanIn = pageNodes.map(n => n.fanIn);
+    const fanOut = pageNodes.map(n => n.fanOut);
+
+    const totalPages = Math.ceil(sorted.length / itemsPerPage);
 
     this.chart = new Chart(ctx, {
       type: 'bar',
@@ -355,7 +369,7 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
         plugins: {
           title: {
             display: true,
-            text: 'Class Coupling (Fan-In vs Fan-Out)',
+            text: `Class Coupling (Fan-In vs Fan-Out) - Page ${this.currentPage() + 1} of ${totalPages}`,
             font: { size: 14, weight: 'bold' }
           },
           legend: { position: 'top' }
@@ -368,5 +382,21 @@ export class ClassCouplingComponent implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  nextPage() {
+    const itemsPerPage = 10;
+    const totalPages = Math.ceil(this.allNodes.length / itemsPerPage);
+    if (this.currentPage() < totalPages - 1) {
+      this.currentPage.update(p => p + 1);
+      this.renderBarChart(this.allNodes);  // Only this
+    }
+  }
+
+  previousPage() {
+    if (this.currentPage() > 0) {
+      this.currentPage.update(p => p - 1);
+      this.renderBarChart(this.allNodes);  // Only this
+    }
   }
 }

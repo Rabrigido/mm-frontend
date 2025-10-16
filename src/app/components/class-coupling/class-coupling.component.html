@@ -1,10 +1,30 @@
 <div class="charts-container">
-  <h2>Class Coupling Metric</h2>
-    <div id= 'coupling-metric' >
-        <div id="d3Graph" class="graph"></div>
+ 
+  
+  <div id="coupling-metric">
+    <div id="d3Graph" class="graph"></div>
+    
+    <div class="chart-container">
+      <canvas id="couplingBarChart"></canvas>
+      
+      <div class="pagination-controls">
+        <button 
+          (click)="previousPage()"
+          [disabled]="currentPage() === 0"
+          class="btn btn-primary">
+          ← Previous
+        </button>
         
-        <canvas id="couplingBarChart"></canvas>
-
+        <span class="page-info">
+          Page {{ currentPage() + 1 }}
+        </span>
+        
+        <button 
+          (click)="nextPage()"
+          class="btn btn-primary">
+          Next →
+        </button>
+      </div>
     </div>
-
+  </div>
 </div>
