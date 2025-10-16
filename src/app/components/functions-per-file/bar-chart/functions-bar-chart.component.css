@@ -1,0 +1,56 @@
+.chart-host {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+}
+
+.chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.axis text {
+  font-size: 12px;
+  fill: #444;
+}
+
+.axis path,
+.axis line {
+  stroke: #ddd;
+}
+
+.title {
+  font-size: 14px;
+  fill: #111;
+}
+
+.bar {
+  fill: #7da2ff; /* usa color por defecto del user agent si prefieres */
+}
+.bar:hover {
+  fill: #5a86ff;
+}
+
+.bar-label {
+  font-size: 12px;
+  fill: #222;
+}
+
+.tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: #111;
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  transform: translate(-50%, -100%);
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  white-space: nowrap;
+}
+.tooltip .tt-name {
+  opacity: .9;
+  margin-bottom: 2px;
+}

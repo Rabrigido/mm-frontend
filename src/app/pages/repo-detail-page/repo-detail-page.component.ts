@@ -12,7 +12,7 @@ import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { Observable } from 'rxjs';
 import { FilesMetricComponent } from '../../components/files-metric/files-metric.component';
 import { CyclomaticMetricComponent } from '../../components/cyclomatic-metric/cyclomatic-metric.component';
-
+import { FunctionsPerFileComponent } from '../../components/functions-per-file/functions-per-file.component';
 
 type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
 
@@ -27,7 +27,8 @@ type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
     FilesMetricComponent,
     LocSlocComponent,
     ReportsNavbarComponent,
-    CyclomaticMetricComponent
+    CyclomaticMetricComponent,
+    FunctionsPerFileComponent
 
   ],
   templateUrl: './repo-detail-page.component.html',

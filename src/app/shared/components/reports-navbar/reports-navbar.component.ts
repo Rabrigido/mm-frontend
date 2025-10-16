@@ -4,7 +4,9 @@ import { NgFor, NgClass } from '@angular/common';
 export type ReportKey =
   | 'loc-sloc'
   | 'files'
-  | 'cyclomatic';
+  | 'cyclomatic'
+  | 'functions-per-file'
+  ;
 
 
 
@@ -24,7 +26,8 @@ export class ReportsNavbarComponent implements OnChanges {
   @Input() items: ReportItem[] = [
     { key: 'loc-sloc', label: 'LOC / SLOC' },
     { key: 'files', label: 'Archivos' },
-    { key: 'cyclomatic', label: 'Complejidad Ciclomática' }, 
+    { key: 'cyclomatic', label: 'Complejidad Ciclomática' },
+    { key: 'functions-per-file', label: 'Funciones por Archivo' },
   ];
 
   @Input() selected: ReportKey | null = null;
