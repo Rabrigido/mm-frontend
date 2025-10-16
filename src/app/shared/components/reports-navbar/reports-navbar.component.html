@@ -1,0 +1,31 @@
+<div class="bg-white rounded-2xl border p-3 mb-4">
+  <div class="flex flex-wrap gap-2 items-center">
+    <button
+      type="button"
+      class="px-3 py-1.5 rounded-xl text-sm border transition hover:bg-gray-50"
+      [ngClass]="selectedValue() === null
+        ? 'bg-gray-900 text-white border-gray-900'
+        : 'border-gray-300 text-gray-700'"
+      (click)="toggle(null)"
+      title="Ocultar reporte seleccionado"
+      [attr.aria-pressed]="selectedValue() === null"
+    >
+      Ninguno
+    </button>
+
+    <ng-container *ngFor="let it of items">
+      <button
+        type="button"
+        class="px-3 py-1.5 rounded-xl text-sm border transition hover:bg-gray-50"
+        [ngClass]="selectedValue() === it.key
+          ? 'bg-emerald-600 text-white border-emerald-600'
+          : 'border-gray-300 text-gray-700'"
+        (click)="toggle(it.key)"
+        [title]="it.hint || it.label"
+        [attr.aria-pressed]="selectedValue() === it.key"
+      >
+        {{ it.label }}
+      </button>
+    </ng-container>
+  </div>
+</div>

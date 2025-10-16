@@ -6,12 +6,14 @@ import { Repo } from '../../models/repo';
 import { ScanResult } from '../../models/scan-result';
 import { LocSlocComponent } from '../../components/loc-sloc/loc-sloc.component';
 import * as echarts from 'echarts';
-
+import { ReportsNavbarComponent, ReportKey  } from '../../shared/components/reports-navbar/reports-navbar.component';
 import { Input } from '@angular/core';
-
+import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { Observable } from 'rxjs';
-
-import { MetricsComponent } from '../../components/metrics/metrics.component';
+import { FilesMetricComponent } from '../../components/files-metric/files-metric.component';
+import { CyclomaticMetricComponent } from '../../components/cyclomatic-metric/cyclomatic-metric.component';
+import { FunctionsPerFileComponent } from '../../components/functions-per-file/functions-per-file.component';
+import { ClassesPerFileComponent } from '../../components/classes-per-file/classes-per-file.component';
 
 type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
 
@@ -23,8 +25,12 @@ type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
   imports: [
     CommonModule,
     RouterLink,
-    MetricsComponent,
+    FilesMetricComponent,
     LocSlocComponent,
+    ReportsNavbarComponent,
+    CyclomaticMetricComponent,
+    FunctionsPerFileComponent,
+    ClassesPerFileComponent
 
   ],
   templateUrl: './repo-detail-page.component.html',
@@ -44,7 +50,8 @@ export class RepoDetailPageComponent implements OnDestroy {
     'functions-per-file',
   ];
 
-
+  // acá tienes tu signal de selección
+  selectedReport = signal<ReportKey | null>(null);
 
   // Estado general
   repo = signal<Repo | null>(null);

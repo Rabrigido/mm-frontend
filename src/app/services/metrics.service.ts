@@ -46,4 +46,23 @@ export class MetricsService {
   }
 
   //getOtrametrica
+
+  // src/app/services/metrics.service.ts
+  getCyclomatic(repoId: string): Observable<{
+    name: string;
+    description: string;
+    total: number;
+    byFile: Record<string, { complexity: number }>;
+    fileCount: number;
+  }> {
+    return this.http.get<{
+      name: string;
+      description: string;
+      total: number;
+      byFile: Record<string, { complexity: number }>;
+      fileCount: number;
+    }>(`${this.base}/metrics/${repoId}/cyclomatic`);
+  }
+ 
+
 }

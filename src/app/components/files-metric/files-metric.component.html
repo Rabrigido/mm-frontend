@@ -1,0 +1,109 @@
+<div class="w-full">
+  <!-- Header -->
+  <div class="mb-4">
+    <h2 class="text-xl font-semibold">{{ name() }}</h2>
+    <p class="text-sm text-gray-600">{{ description() }}</p>
+  </div>
+
+  <!-- Loading / Error -->
+  @if (loading()) {
+    <div class="p-4 rounded-xl border bg-gray-50 animate-pulse">Cargando archivos…</div>
+  } @else if (error()) {
+    <div class="p-4 rounded-xl border border-red-300 bg-red-50 text-red-700">
+      {{ error() }}
+      <button class="ml-2 underline" (click)="fetch()">Reintentar</button>
+    </div>
+  } @else {
+    <!-- Controls -->
+    <div class="flex flex-col md:flex-row gap-3 items-start md:items-end mb-4">
+      <div class="flex-1">
+        <label class="block text-xs text-gray-500 mb-1">Buscar</label>
+        <input
+          type="text"
+          class="w-full border rounded-lg px-3 py-2"
+          placeholder="filtrar por ruta / nombre…"
+          (input)="search.set($any($event.target).value)"
+          [value]="search()"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Extensión</label>
+        <select
+          class="border rounded-lg px-3 py-2 min-w-40"
+          (change)="extFilter.set($any($event.target).value)"
+          [value]="extFilter()"
+        >
+          <option value="all">Todas</option>
+          @for (ext of extensions(); track ext) {
+            <option [value]="ext">{{ ext }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex gap-2">
+        <button class="px-3 py-2 rounded-lg border" (click)="resetFilters()">Limpiar</button>
+        <button class="px-3 py-2 rounded-lg border" (click)="downloadJSON()">Descargar JSON</button>
+        <button class="px-3 py-2 rounded-lg border" (click)="downloadCSV()">Descargar CSV</button>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="text-sm text-gray-700 mb-2">
+      <span class="font-medium">{{ filtered().length }}</span> de
+      <span class="font-medium">{{ files().length }}</span> archivos
+      @if (extFilter() !== 'all') {
+        <span class="ml-1">({{ extFilter() }})</span>
+      }
+    </div>
+
+    <!-- List -->
+    @if (filtered().length === 0) {
+      <div class="p-4 rounded-xl border bg-gray-50">Sin resultados.</div>
+    } @else {
+      <ul class="divide-y rounded-xl border">
+        @for (p of pageSlice(); track p) {
+          <li class="flex items-start justify-between gap-3 px-3 py-2">
+            <div class="min-w-0">
+              <div class="font-medium truncate">
+                {{ p.split('/').pop() }}
+                <span class="ml-2 text-xs text-gray-500">{{ p.split('.').length > 1 ? p.split('.').pop() : '' }}</span>
+              </div>
+              <div class="text-xs text-gray-600 overflow-hidden text-ellipsis">
+                <code class="break-all">{{ p }}</code>
+              </div>
+            </div>
+            <button class="shrink-0 px-2 py-1 border rounded-md text-xs" (click)="copyPath(p)">Copiar</button>
+          </li>
+        }
+      </ul>
+
+      <!-- Pagination -->
+      <div class="flex items-center justify-between mt-3 text-sm">
+        <div>Página {{ page() }} / {{ totalPages() }}</div>
+        <div class="flex gap-2">
+          <button
+            class="px-3 py-1 border rounded-md"
+            [disabled]="page() === 1"
+            (click)="page.set(page() - 1)"
+          >
+            Anterior
+          </button>
+          <button
+            class="px-3 py-1 border rounded-md"
+            [disabled]="page() === totalPages()"
+            (click)="page.set(page() + 1)"
+          >
+            Siguiente
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Por ejemplo, mostrar árbol con todos los archivos -->
+<files-tree
+[paths]="files()" />
+
+
+  }
+</div>

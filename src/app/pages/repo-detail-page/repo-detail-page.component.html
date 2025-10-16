@@ -24,13 +24,11 @@
     </div>
 
     <div class="mt-4 text-xs text-gray-500" *ngIf="r.scannedAt">
-      Último scan: {{ r.scannedAt | date : 'short' }}
+      Último scan: {{ r.scannedAt | date : "short" }}
     </div>
 
     <div class="mt-6 flex gap-2">
-      <button
-        class="px-4 py-2 rounded-xl bg-emerald-600 text-white disabled:opacity-60"
-        (click)="runScan()"
+      <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white disabled:opacity-60" (click)="runScan()"
         [disabled]="loading()">
         Ejecutar scanner
       </button>
@@ -41,17 +39,16 @@
   <div *ngIf="scan() as s" class="mt-6 bg-white rounded-2xl border p-4">
     <div class="flex items-center justify-between mb-3">
       <h2 class="text-xl font-semibold">Resultado del scan</h2>
-      <button
-        class="px-3 py-1.5 rounded-lg bg-gray-800 text-white hover:bg-black"
-        (click)="downloadScanJson()">
+      <button class="px-3 py-1.5 rounded-lg bg-gray-800 text-white hover:bg-black" (click)="downloadScanJson()">
         Descargar JSON
       </button>
     </div>
 
     <div class="text-sm text-gray-700">
       <div class="mb-2"><strong>Repo ID:</strong> {{ s.repoId }}</div>
-      <div class="mb-2"><strong>Scanned At:</strong> {{ s.scannedAt | date : 'short' }}</div>
-
+      <div class="mb-2">
+        <strong>Scanned At:</strong> {{ s.scannedAt | date : "short" }}
+      </div>
 
       <div class="grid md:grid-cols-3 gap-3">
         <div class="bg-gray-50 rounded-xl p-3">
@@ -71,12 +68,28 @@
       </div>
     </div>
   </div>
+  <div class="my-3">
+    <app-reports-navbar [(selected)]="selectedReport"> </app-reports-navbar>
+  </div>
+  <!-- 🔹 Contenedor del reporte seleccionado -->
+  <div *ngIf="selectedReport() as rSel" class="my-6">
+    <ng-container [ngSwitch]="rSel">
+      <app-loc-sloc *ngSwitchCase="'loc-sloc'" [repoId]="repo()!.id">
+      </app-loc-sloc>
 
-<app-loc-sloc [repoId]="this.repo()!.id"></app-loc-sloc>
+      <app-files-metric *ngSwitchCase="'files'" [repoId]="repo()!.id">
+      </app-files-metric>
 
-  <app-metrics
-  [repoId]="this.repo()!.id"
-  [metrics]="this.metricKeys()">
-</app-metrics>
+      <app-functions-per-file *ngSwitchCase="'functions-per-file'" [repoId]="repo()!.id">
+      </app-functions-per-file>
 
+      <app-cyclomatic-metric *ngSwitchCase="'cyclomatic'" [repoId]="repo()!.id">
+      </app-cyclomatic-metric>
+
+
+      <app-classes-per-file *ngSwitchCase="'classes-per-file'" [repoId]="repo()!.id">
+      </app-classes-per-file>
+
+    </ng-container>
+  </div>
 </div>

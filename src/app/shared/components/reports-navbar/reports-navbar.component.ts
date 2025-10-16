@@ -7,7 +7,13 @@ export type ReportKey =
   | 'dependencies'
   | 'architecture'
   | 'duplication'
+
+  | 'files'
+  | 'functions-per-file'
+  | 'classes-per-file'
   ;
+
+
 
 export interface ReportItem {
   key: ReportKey;
@@ -29,9 +35,11 @@ export class ReportsNavbarComponent implements OnChanges {
     { key: 'architecture', label: 'Architecture' },
     { key: 'duplication', label: 'Duplication' },
  
- 
 
+    { key: 'files', label: 'Archivos' },
 
+    { key: 'functions-per-file', label: 'Funciones por Archivo' },
+    { key: 'classes-per-file', label: 'Clases por Archivo' },
   ];
 
   @Input() selected: ReportKey | null = null;

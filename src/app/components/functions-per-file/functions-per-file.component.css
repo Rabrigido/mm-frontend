@@ -1,0 +1,143 @@
+.fpfile {
+  display: grid;
+  gap: 12px;
+}
+
+.bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.bar input[type="search"] {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.bar .right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f6f8fa;
+}
+.status.error {
+  background: #ffe8e8;
+  color: #8b0000;
+}
+
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.table thead th {
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  user-select: none;
+}
+.table thead th.active {
+  color: #0b67ff;
+}
+.table tbody td {
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+.table tbody tr.row:hover {
+  background: #fbfbff;
+}
+.table tfoot td {
+  padding: 8px 10px;
+  background: #fafafa;
+  border-top: 1px solid #eee;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.path {
+  max-width: 720px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.details td {
+  background: #f9fbff;
+}
+.detail-wrap {
+  display: grid;
+  gap: 10px;
+}
+.detail-head {
+  display: flex;
+  align-items: center;
+}
+.detail-head .spacer {
+  flex: 1;
+}
+
+.detail-list {
+  display: grid;
+  gap: 8px;
+}
+.fn {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  border: 1px dashed #dfe7ff;
+  background: #ffffff;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+.fn .left {
+  min-width: 260px;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid #d0d7de;
+  border-radius: 999px;
+  font-size: 12px;
+  margin-right: 6px;
+  background: #f6f8fa;
+}
+
+.btn {
+  border: 1px solid #cfd8ff;
+  background: #eef2ff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.btn:hover {
+  background: #e3e9ff;
+}
+
+.pager {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.pager .total {
+  margin-left: auto;
+  color: #666;
+  font-size: 12px;
+}
