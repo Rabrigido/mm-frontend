@@ -9,8 +9,11 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MetricsService } from '../../services/metrics.service';
-import { FunctionCouplingGraphComponent } from './function-coupling-graph/function-coupling-graph.component';
+
+import { FunctionCouplingGraphComponent } from './graph/function-coupling-graph.component';
 import { FunctionCouplingD3Component } from './radial-coupling/radial-coupling.component';
+import { FunctionCouplingBarChartComponent } from './bar-chart/function-coupling-bar-chart.component';
+
 type RawFC = {
   [filePath: string]: {
     [funcName: string]: {
@@ -37,8 +40,8 @@ type TabState<T> = { loading: boolean; error?: string; data?: T };
 @Component({
   selector: 'function-coupling',
   standalone: true,
-  imports: [CommonModule, FormsModule, FunctionCouplingGraphComponent,
-    FunctionCouplingD3Component
+  imports: [CommonModule, FormsModule,
+    FunctionCouplingD3Component, FunctionCouplingGraphComponent, FunctionCouplingBarChartComponent
   ],
   templateUrl: './function-coupling.component.html',
 })

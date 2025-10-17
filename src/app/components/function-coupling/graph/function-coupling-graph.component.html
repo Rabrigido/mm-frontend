@@ -1,0 +1,49 @@
+<!-- ===============================
+file: src/app/components/function-coupling/function-coupling-graph.component.html
+=============================== -->
+
+<div class="charts-container">
+  <div id="function-coupling-metric">
+    <div class="left">
+      <div id="d3FunctionGraph" class="graph"></div>
+
+      <!-- Details panel appears when a node is selected -->
+      <div class="details" *ngIf="hasSelection()">
+        @if (selected(); as s) {
+          <div class="header">
+            <div class="title">
+              <h3>{{ s.label }}</h3>
+              <small class="muted">{{ s.file }}</small>
+            </div>
+            <button class="btn btn-secondary" (click)="clearSelection()">Cerrar</button>
+          </div>
+          <div class="stats">
+            <div class="stat"><span class="value">{{ s.fanIn }}</span><span class="key">Fan-In</span></div>
+            <div class="stat"><span class="value">{{ s.fanOut }}</span><span class="key">Fan-Out</span></div>
+            <div class="stat"><span class="value">{{ s.fanIn + s.fanOut }}</span><span class="key">Total</span></div>
+          </div>
+          <div class="lists">
+            <div>
+              <h4>Callers (quién la llama)</h4>
+              <ul>
+                @for (id of neighbors().callers; track id) {
+                  <li>{{ id.split('::')[1] }} <small class="muted">{{ id.split('::')[0] }}</small></li>
+                }
+              </ul>
+            </div>
+            <div>
+              <h4>Callees (a quién llama)</h4>
+              <ul>
+                @for (id of neighbors().callees; track id) {
+                  <li>{{ id.split('::')[1] }} <small class="muted">{{ id.split('::')[0] }}</small></li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+
+  </div>
+</div>

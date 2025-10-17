@@ -57,7 +57,7 @@
 
 <!-- function-coupling.component.html -->
 
-<div class ="">
+
 <function-coupling-d3
   [data]="data"
 
@@ -66,6 +66,18 @@
 
   >
 </function-coupling-d3>
-</div>
+
+<app-function-coupling-bar-chart
+  [repoId]="repoId"
+
+  >
+</app-function-coupling-bar-chart>
+
+<app-function-coupling-graph
+  [repoId]="repoId"
+
+  >
+</app-function-coupling-graph>
 
 </div>
+
