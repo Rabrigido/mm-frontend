@@ -61,7 +61,7 @@ export class FunctionCouplingComponent implements OnInit {
   // filtros / ui
   search = signal<string>('');
   selectedDir = signal<string>('(todas)');
-  topN = signal<number>(50);
+  topN = signal<number>(15);
 
   // sort
   sortBy = signal<keyof FCRow>('coupling');

@@ -1,19 +1,18 @@
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-  <div class="card">
-    <div class="card-title">Tendencia LOC/SLOC</div>
-    <div #areaEl class="chart"></div>
-    <div class="chart-hint" *ngIf="!history?.length">
-      Sin historia: pásame [{{ '{' }} date, loc, sloc {{ '}' }}]
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="card-title">LOC/SLOC por lenguaje</div>
-    <div #barEl class="chart"></div>
-  </div>
 
-  <div class="card xl:col-span-1">
-    <div class="card-title">Treemap por carpeta (LOC)</div>
-    <div #treeEl class="chart"></div>
-  </div>
+<div class="grid grid-cols-1 lg:grid-cols-1 gap-4">
+  <div #barEl class="h-[340px] w-full"></div>
+
+  <div class="flex items-center gap-3 mb-3">
+  <label class="text-sm font-medium">Métrica treemap:</label>
+  <select class="border rounded px-2 py-1"
+          (change)="onModeChange(($any($event.target)).value)">
+    <option value="SLOC" selected>SLOC</option>
+    <option value="LOC">LOC</option>
+    <option value="RATIO">SLOC/LOC (%)</option>
+    <option value="COMMENTS">Comentarios</option>
+  </select>
 </div>
+  <div #treeEl class="h-[420px] w-full"></div>
+</div>
+
