@@ -86,12 +86,18 @@
       <app-cyclomatic-metric *ngSwitchCase="'cyclomatic-complexity'" [repoId]="repo()!.id">
       </app-cyclomatic-metric>
 
+      <app-dependencies-d3 *ngSwitchCase="'dependencies'" [repoId]="repo()!.id">
+      </app-dependencies-d3>
+
 
       <app-classes-per-file *ngSwitchCase="'classes-per-file'" [repoId]="repo()!.id">
       </app-classes-per-file>
 
       <function-coupling *ngSwitchCase="'function-coupling'" [repoId]="repo()!.id">
       </function-coupling>
+
+      <app-class-coupling *ngSwitchCase="'class-coupling'" [repoId]="repo()!.id">
+      </app-class-coupling>
 
     </ng-container>
   </div>

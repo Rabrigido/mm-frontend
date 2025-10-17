@@ -15,6 +15,8 @@ import { CyclomaticMetricComponent } from '../../components/cyclomatic-metric/cy
 import { FunctionsPerFileComponent } from '../../components/functions-per-file/functions-per-file.component';
 import { ClassesPerFileComponent } from '../../components/classes-per-file/classes-per-file.component';
 import { FunctionCouplingComponent } from '../../components/function-coupling/function-coupling.component';
+import { ClassCouplingComponent } from '../../components/class-coupling/class-coupling.component';
+import { DependenciesD3Component } from '../../components/dependencies/dependencies-d3.component';
 type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
 
 
@@ -31,8 +33,10 @@ type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
     CyclomaticMetricComponent,
     FunctionsPerFileComponent,
     ClassesPerFileComponent,
-    FunctionCouplingComponent
-
+    FunctionCouplingComponent,
+    ClassCouplingComponent,
+    DependenciesD3Component
+ 
   ],
   templateUrl: './repo-detail-page.component.html',
 })
@@ -49,6 +53,7 @@ export class RepoDetailPageComponent implements OnDestroy {
     'files',
     'function-coupling',
     'functions-per-file',
+
   ];
 
   // acá tienes tu signal de selección
