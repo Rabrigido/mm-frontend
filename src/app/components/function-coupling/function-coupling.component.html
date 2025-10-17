@@ -1,113 +1,71 @@
-<div class="p-3 space-y-3">
+<div class="flex flex-col gap-4">
 
-  <!-- Header / acciones -->
-  <div class="flex flex-wrap items-center gap-2">
-    <input
-      type="text"
-      class="border rounded px-2 py-1 min-w-[260px]"
-      placeholder="Buscar función o archivo…"
-      [ngModel]="search()"
-      (ngModelChange)="search.set($event)"
-    />
+  <!-- Controles Ranking -->
+  <div class="flex flex-wrap gap-2 items-end">
+    <div class="flex flex-col">
+      <label class="text-xs opacity-70">Buscar</label>
+      <input class="px-2 py-1 border rounded min-w-[220px]"
+             [(ngModel)]="search" placeholder="función o archivo…" />
+    </div>
 
-    <select
-      class="border rounded px-2 py-1"
-      [ngModel]="selectedDir()"
-      (ngModelChange)="selectedDir.set($event)"
-    >
-      <option *ngFor="let d of dirs()" [value]="d">{{ d }}</option>
-    </select>
+    <div class="flex flex-col">
+      <label class="text-xs opacity-70">Carpeta</label>
+      <select class="px-2 py-1 border rounded" [(ngModel)]="selectedDir">
+        <option *ngFor="let d of dirs()" [ngValue]="d">{{ d }}</option>
+      </select>
+    </div>
 
-    <label class="flex items-center gap-2">
-      <span>Top N</span>
-      <input
-        type="number"
-        min="0"
-        class="border rounded px-2 py-1 w-24"
-        [ngModel]="topN()"
-        (ngModelChange)="topN.set($event ? +$event : 0)"
-      />
-    </label>
+    <div class="flex flex-col">
+      <label class="text-xs opacity-70">Top N</label>
+      <input class="px-2 py-1 border rounded w-24" type="number" [(ngModel)]="topN" />
+    </div>
 
-    <button class="border rounded px-3 py-1" (click)="exportCSV()">Exportar CSV</button>
-    <button class="border rounded px-3 py-1" (click)="exportJSON()">Exportar JSON</button>
-
-    <span class="ml-auto text-sm opacity-70"
-      >Total coupling: {{ totalCoupling() | number:'1.0-0' }}</span
-    >
+    <div class="ml-auto flex gap-2">
+      <button class="px-3 py-1 border rounded" (click)="exportCSV()">Exportar CSV</button>
+      <button class="px-3 py-1 border rounded" (click)="exportJSON()">Exportar JSON</button>
+    </div>
   </div>
 
-  <!-- Estados -->
-  <div *ngIf="state().loading" class="p-3 rounded border">Cargando…</div>
-  <div *ngIf="state().error" class="p-3 rounded border border-red-400 text-red-700">
-    {{ state().error }}
-  </div>
-
-  <!-- Tabla -->
-  <div class="overflow-auto">
-    <table class="min-w-full border-collapse">
-      <thead>
-        <tr class="bg-gray-100">
-          <th class="text-left p-2 border cursor-pointer" (click)="toggleSort('func')">
-            función
-            <span *ngIf="sortBy() === 'func'">({{ sortDir() }})</span>
-          </th>
-          <th class="text-left p-2 border cursor-pointer" (click)="toggleSort('file')">
-            archivo
-            <span *ngIf="sortBy() === 'file'">({{ sortDir() }})</span>
-          </th>
-          <th class="text-left p-2 border cursor-pointer" (click)="toggleSort('dir')">
-            carpeta
-            <span *ngIf="sortBy() === 'dir'">({{ sortDir() }})</span>
-          </th>
-          <th class="text-right p-2 border cursor-pointer" (click)="toggleSort('fanIn')">
-            fan-in
-            <span *ngIf="sortBy() === 'fanIn'">({{ sortDir() }})</span>
-          </th>
-          <th class="text-right p-2 border cursor-pointer" (click)="toggleSort('fanOut')">
-            fan-out
-            <span *ngIf="sortBy() === 'fanOut'">({{ sortDir() }})</span>
-          </th>
-          <th class="text-right p-2 border cursor-pointer" (click)="toggleSort('coupling')">
-            coupling
-            <span *ngIf="sortBy() === 'coupling'">({{ sortDir() }})</span>
-          </th>
-          <th class="text-right p-2 border cursor-pointer" (click)="toggleSort('instability')">
-            I
-            <span *ngIf="sortBy() === 'instability'">({{ sortDir() }})</span>
-          </th>
-          <th class="text-right p-2 border">
-            % del total
-          </th>
+  <!-- Tabla Ranking -->
+  <div class="overflow-auto border rounded">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="p-2 text-left cursor-pointer" (click)="toggleSort('func')">Función</th>
+          <th class="p-2 text-left cursor-pointer" (click)="toggleSort('file')">Archivo</th>
+          <th class="p-2 text-left cursor-pointer" (click)="toggleSort('dir')">Carpeta</th>
+          <th class="p-2 text-right cursor-pointer" (click)="toggleSort('fanIn')">Fan-In</th>
+          <th class="p-2 text-right cursor-pointer" (click)="toggleSort('fanOut')">Fan-Out</th>
+          <th class="p-2 text-right cursor-pointer" (click)="toggleSort('coupling')">Coupling</th>
+          <th class="p-2 text-right cursor-pointer" (click)="toggleSort('instability')">I</th>
         </tr>
       </thead>
       <tbody>
-        <tr
-          *ngFor="let r of filteredSorted(); trackBy: trackRow"
-          class="hover:bg-gray-50"
-        >
-          <td class="p-2 border font-mono">{{ r.func }}</td>
-          <td class="p-2 border font-mono">{{ r.file }}</td>
-          <td class="p-2 border">{{ r.dir || '(root)' }}</td>
-          <td class="p-2 border text-right">{{ r.fanIn }}</td>
-          <td class="p-2 border text-right">{{ r.fanOut }}</td>
-          <td class="p-2 border text-right">{{ r.coupling }}</td>
-          <td class="p-2 border text-right">
-            {{ r.instability | number:'1.3-3' }}
-          </td>
-          <td class="p-2 border text-right">
-            {{
-              (totalCoupling() ? (r.coupling / totalCoupling()) * 100 : 0)
-                | number:'1.2-2'
-            }}%
-          </td>
-        </tr>
-        <tr *ngIf="!state().loading && filteredSorted().length === 0">
-          <td colspan="8" class="p-3 text-center text-sm opacity-70">
-            Sin resultados con los filtros actuales.
-          </td>
+        <tr *ngFor="let r of filteredSorted(); trackBy: trackRow" class="border-t">
+          <td class="p-2">{{ r.func }}</td>
+          <td class="p-2">{{ r.file }}</td>
+          <td class="p-2">{{ r.dir }}</td>
+          <td class="p-2 text-right">{{ r.fanIn }}</td>
+          <td class="p-2 text-right">{{ r.fanOut }}</td>
+          <td class="p-2 text-right font-medium">{{ r.coupling }}</td>
+          <td class="p-2 text-right">{{ r.instability | number:'1.3-3' }}</td>
         </tr>
       </tbody>
     </table>
   </div>
+
+
+<!-- function-coupling.component.html -->
+
+<div class ="">
+<function-coupling-d3
+  [data]="data"
+
+  [width]="900"
+  [padding]="100"
+
+  >
+</function-coupling-d3>
+</div>
+
 </div>

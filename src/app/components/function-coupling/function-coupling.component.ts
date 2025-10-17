@@ -5,12 +5,12 @@ import {
   inject,
   signal,
   computed,
-  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MetricsService } from '../../services/metrics.service';
-
+import { FunctionCouplingGraphComponent } from './function-coupling-graph/function-coupling-graph.component';
+import { FunctionCouplingD3Component } from './radial-coupling/radial-coupling.component';
 type RawFC = {
   [filePath: string]: {
     [funcName: string]: {
@@ -37,13 +37,20 @@ type TabState<T> = { loading: boolean; error?: string; data?: T };
 @Component({
   selector: 'function-coupling',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FunctionCouplingGraphComponent,
+    FunctionCouplingD3Component
+  ],
   templateUrl: './function-coupling.component.html',
 })
 export class FunctionCouplingComponent implements OnInit {
   private http = inject(MetricsService);
 
+  data : RawFC = {};
+
   @Input({ required: true }) repoId!: string;
+
+  // ------ hijo (grafo) recibe el result crudo ------
+  metricFunctionCoupling = signal<RawFC>({});
 
   // ---------------- state ----------------
   state = signal<TabState<FCRow[]>>({ loading: false });
@@ -61,10 +68,7 @@ export class FunctionCouplingComponent implements OnInit {
   rows = computed(() => this.state().data ?? []);
   dirs = computed(() => {
     const set = new Set<string>();
-    for (const r of this.rows()) {
-      // raíz si no hay carpeta
-      set.add(r.dir || '(root)');
-    }
+    for (const r of this.rows()) set.add(r.dir || '(root)');
     return ['(todas)', ...Array.from(set).sort()];
   });
 
@@ -76,8 +80,7 @@ export class FunctionCouplingComponent implements OnInit {
     const q = this.search().trim().toLowerCase();
     const dir = this.selectedDir();
     const rows = this.rows().filter((r) => {
-      const passDir =
-        dir === '(todas)' ? true : (r.dir || '(root)') === dir;
+      const passDir = dir === '(todas)' ? true : (r.dir || '(root)') === dir;
       const passQ =
         !q ||
         r.func.toLowerCase().includes(q) ||
@@ -94,7 +97,6 @@ export class FunctionCouplingComponent implements OnInit {
       if (typeof av === 'number' && typeof bv === 'number') {
         return (av - bv) * dirMul;
       }
-      // string
       return String(av).localeCompare(String(bv)) * dirMul;
     });
 
@@ -111,14 +113,22 @@ export class FunctionCouplingComponent implements OnInit {
   async load() {
     try {
       this.state.set({ loading: true });
-      const resp = await this.http
-        .getMetric(this.repoId, 'function-coupling')
-        .toPromise();
-      const raw: RawFC = resp?.result ?? {};
-      const rows = this.flatten(raw);
-      this.state.set({ loading: false, data: rows });
-    } catch (err: any) {
-      this.state.set({ loading: false, error: err?.message ?? 'Error' });
+      this.http.getMetric(this.repoId, 'function-coupling').subscribe({
+        next: (resp) => {
+          const raw: RawFC = resp?.result ?? {};
+          this.data = raw;
+          // -> hijo
+          this.metricFunctionCoupling.set(raw);
+          // -> ranking/tabla padre
+          const rows = this.flatten(raw);
+          this.state.set({ loading: false, data: rows });
+        },
+        error: (err) => {
+          this.state.set({ loading: false, error: err?.message ?? 'Error' });
+        },
+      });
+    } catch {
+      this.state.set({ loading: false, error: 'Error cargando datos' });
     }
   }
 
@@ -133,16 +143,7 @@ export class FunctionCouplingComponent implements OnInit {
 
   exportCSV() {
     const rows = this.filteredSorted();
-    const header = [
-      'función',
-      'archivo',
-      'carpeta',
-      'fan_in',
-      'fan_out',
-      'coupling',
-      'I',
-      'pct_total',
-    ];
+    const header = ['función','archivo','carpeta','fan_in','fan_out','coupling','I','pct_total'];
     const total = this.totalCoupling() || 1;
     const lines = rows.map((r) => {
       const pct = (r.coupling / total) * 100;
@@ -157,10 +158,9 @@ export class FunctionCouplingComponent implements OnInit {
         pct.toFixed(2),
       ].join(',');
     });
-    const blob = new Blob(
-      [header.join(',') + '\n' + lines.join('\n')],
-      { type: 'text/csv;charset=utf-8' }
-    );
+    const blob = new Blob([header.join(',') + '\n' + lines.join('\n')], {
+      type: 'text/csv;charset=utf-8',
+    });
     this.downloadBlob(blob, 'function-coupling-ranking.csv');
   }
 
@@ -176,10 +176,9 @@ export class FunctionCouplingComponent implements OnInit {
       instability: r.instability,
       pct_total: r.coupling / total,
     }));
-    const blob = new Blob(
-      [JSON.stringify(payload, null, 2)],
-      { type: 'application/json;charset=utf-8' }
-    );
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    });
     this.downloadBlob(blob, 'function-coupling-ranking.json');
   }
 
@@ -239,9 +238,5 @@ export class FunctionCouplingComponent implements OnInit {
     URL.revokeObjectURL(url);
   }
 
-
-trackRow = (_: number, r: FCRow) => r.id;
-
+  trackRow = (_: number, r: FCRow) => r.id;
 }
-
-

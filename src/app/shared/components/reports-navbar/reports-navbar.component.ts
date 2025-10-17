@@ -8,6 +8,7 @@ export type ReportKey =
   | 'architecture'
   | 'duplication'
 
+
   | 'files'
   | 'functions-per-file'
   | 'classes-per-file'
