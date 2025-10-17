@@ -11,8 +11,19 @@
         placeholder="Filtrar por ruta de archivo…"
         class="px-3 py-2 rounded-lg border border-gray-300 text-sm w-64"
         [value]="q()"
-        (input)="q.set($any($event.target)?.value)"
+        (input)="onFilterInput($any($event.target).value || '')"
       />
+      <select
+        class="px-3 py-2 rounded-lg border border-gray-300 text-sm"
+        [value]="pageSize()"
+        (change)="setPageSize( +$any($event.target).value )"
+        title="Tamaño de página"
+      >
+        <option [value]="10">10</option>
+        <option [value]="25">25</option>
+        <option [value]="50">50</option>
+        <option [value]="100">100</option>
+      </select>
       <button
         class="px-3 py-2 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700"
         (click)="fetch(true)"
@@ -53,8 +64,15 @@
     </div>
   </div>
 
-  <!-- Table -->
-  <div *ngIf="rows().length" class="overflow-auto rounded-xl border">
+  <!-- Gráficos -->
+  <app-loc-sloc-graphs
+    class="block"
+    [data]="chartData()"
+    [history]="locHistory()"
+  ></app-loc-sloc-graphs>
+
+  <!-- Tabla -->
+  <div *ngIf="pagedRows().length" class="overflow-auto rounded-xl border">
     <table class="min-w-full text-sm">
       <thead class="bg-gray-50">
         <tr class="text-left">
@@ -75,7 +93,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let r of rows()" class="border-t hover:bg-gray-50">
+        <tr *ngFor="let r of pagedRows(); trackBy: trackByFile" class="border-t hover:bg-gray-50">
           <td class="px-4 py-2 font-mono text-[12px]">{{ r.file }}</td>
           <td class="px-4 py-2">{{ r.loc | number }}</td>
           <td class="px-4 py-2">{{ r.sloc | number }}</td>
@@ -88,5 +106,33 @@
 
   <div *ngIf="!loading() && !error() && data() && rows().length === 0" class="text-gray-500">
     No hay archivos que coincidan con el filtro.
+  </div>
+
+  <!-- Controles de paginación -->
+  <div *ngIf="totalRows() > 0" class="flex items-center justify-between text-sm">
+    <div class="text-gray-600">
+      {{
+        (pageIndex() * pageSize()) + 1
+      }}–{{
+        ( ((pageIndex() + 1) * pageSize()) < totalRows() ? ((pageIndex() + 1) * pageSize()) : totalRows() ) | number
+      }} de {{ totalRows() | number }}
+    </div>
+    <div class="flex items-center gap-2">
+      <button
+        class="px-3 py-1.5 rounded-lg border disabled:opacity-50"
+        [disabled]="pageIndex() === 0"
+        (click)="prevPage()"
+      >
+        ‹ Anterior
+      </button>
+      <span>Pág. {{ pageIndex() + 1 }} / {{ pageCount() }}</span>
+      <button
+        class="px-3 py-1.5 rounded-lg border disabled:opacity-50"
+        [disabled]="pageIndex() >= pageCount() - 1"
+        (click)="nextPage()"
+      >
+        Siguiente ›
+      </button>
+    </div>
   </div>
 </div>

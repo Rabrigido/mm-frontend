@@ -1,0 +1,19 @@
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+  <div class="card">
+    <div class="card-title">Tendencia LOC/SLOC</div>
+    <div #areaEl class="chart"></div>
+    <div class="chart-hint" *ngIf="!history?.length">
+      Sin historia: pásame [{{ '{' }} date, loc, sloc {{ '}' }}]
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">LOC/SLOC por lenguaje</div>
+    <div #barEl class="chart"></div>
+  </div>
+
+  <div class="card xl:col-span-1">
+    <div class="card-title">Treemap por carpeta (LOC)</div>
+    <div #treeEl class="chart"></div>
+  </div>
+</div>

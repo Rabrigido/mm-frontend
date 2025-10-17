@@ -1,6 +1,16 @@
-import { Component, Input, OnChanges, OnInit, SimpleChanges, inject, signal, computed } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnChanges,
+  OnInit,
+  SimpleChanges,
+  inject,
+  signal,
+  computed,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MetricsService } from '../../services/metrics.service';
+import { LocSlocGraphsComponent } from './chart/loc-sloc-chart.component';
 
 type LocSlocResp = {
   total: { loc: number; sloc: number };
@@ -10,10 +20,14 @@ type LocSlocResp = {
 
 type Row = { file: string; loc: number; sloc: number; comments: number; slocRatio: number };
 
+// Tipos que consume el hijo:
+type LocChartRow = { path: string; loc: number; sloc: number; ext?: string };
+type LocPoint = { date: string; loc: number; sloc: number };
+
 @Component({
   selector: 'app-loc-sloc',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LocSlocGraphsComponent],
   templateUrl: './loc-sloc.component.html',
 })
 export class LocSlocComponent implements OnInit, OnChanges {
@@ -30,6 +44,20 @@ export class LocSlocComponent implements OnInit, OnChanges {
   sortBy = signal<'sloc' | 'loc' | 'file'>('sloc');
   sortDir = signal<'desc' | 'asc'>('desc');
 
+  // Paginación
+  pageSize = signal<number>(25);
+  pageIndex = signal<number>(0);
+
+  // (Opcional) historia para el gráfico de tendencia
+  locHistory = signal<LocPoint[]>([]);
+
+  // Helpers
+  private extFrom(path: string) {
+    const i = path.lastIndexOf('.');
+    return i >= 0 ? path.slice(i) : '(sin ext)';
+  }
+
+  // Filtradas + ordenadas (sin paginar)
   rows = computed<Row[]>(() => {
     const resp = this.data();
     if (!resp) return [];
@@ -58,7 +86,28 @@ export class LocSlocComponent implements OnInit, OnChanges {
       return dir === 'desc' ? cmp : -cmp;
     });
 
+    // al cambiar filtro/orden, volvemos a la primera página
     return filtered;
+  });
+
+  // Para el hijo (transforma rows -> {path,loc,sloc,ext})
+  chartData = computed<LocChartRow[]>(() =>
+    this.rows().map(r => ({
+      path: r.file,
+      loc: r.loc,
+      sloc: r.sloc,
+      ext: this.extFrom(r.file),
+    }))
+  );
+
+  // Paginación derivada
+  totalRows = computed(() => this.rows().length);
+  pageCount = computed(() =>
+    Math.max(1, Math.ceil(this.totalRows() / this.pageSize()))
+  );
+  pagedRows = computed<Row[]>(() => {
+    const start = this.pageIndex() * this.pageSize();
+    return this.rows().slice(start, start + this.pageSize());
   });
 
   ngOnInit() {
@@ -80,6 +129,7 @@ export class LocSlocComponent implements OnInit, OnChanges {
     this.svc.getLocSloc(this.repoId).subscribe({
       next: (resp) => {
         this.data.set(resp);
+        this.pageIndex.set(0); // reset paginación
         this.loading.set(false);
       },
       error: (err) => {
@@ -90,18 +140,41 @@ export class LocSlocComponent implements OnInit, OnChanges {
     });
   }
 
-  toggleSort(col: 'sloc' | 'loc' | 'file') {
-    if (this.sortBy() === col) {
-      this.sortDir.set(this.sortDir() === 'desc' ? 'asc' : 'desc');
-    } else {
-      this.sortBy.set(col);
-      this.sortDir.set(col === 'file' ? 'asc' : 'desc');
-    }
+toggleSort(col: 'sloc' | 'loc' | 'file') {
+  if (this.sortBy() === col) {
+    this.sortDir.set(this.sortDir() === 'desc' ? 'asc' : 'desc');
+  } else {
+    this.sortBy.set(col);
+    this.sortDir.set(col === 'file' ? 'asc' : 'desc');
   }
+  this.pageIndex.set(0); // ✅ mover aquí
+}
+
+onFilterInput(value: string) {
+  this.q.set(value);
+  this.pageIndex.set(0); // ✅ mover aquí
+}
 
   fmtPct(n: number) {
     return (n * 100).toFixed(1) + '%';
   }
+
+  // Paginación handlers
+  setPageSize(ps: number) {
+    this.pageSize.set(ps);
+    this.pageIndex.set(0);
+  }
+  prevPage() {
+    this.pageIndex.set(Math.max(0, this.pageIndex() - 1));
+  }
+  nextPage() {
+    this.pageIndex.set(Math.min(this.pageCount() - 1, this.pageIndex() + 1));
+  }
+  goToPage(i: number) {
+    const clamped = Math.min(Math.max(0, i), this.pageCount() - 1);
+    this.pageIndex.set(clamped);
+  }
+
 
   downloadJSON() {
     const payload = this.data();
@@ -114,4 +187,6 @@ export class LocSlocComponent implements OnInit, OnChanges {
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  trackByFile = (_: number, r: Row) => r.file;
 }
