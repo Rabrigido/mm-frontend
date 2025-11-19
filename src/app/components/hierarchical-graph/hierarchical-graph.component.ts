@@ -3,6 +3,33 @@ import { CommonModule } from '@angular/common';
 import * as d3 from 'd3';
 import { GraphDataService, GraphNode, GraphLink, NodeType } from '../../services/graph-data.service';
 
+// --- CONSTANTS ---
+const ZOOM_MIN = 0.1;
+const ZOOM_MAX = 8;
+const DEFAULT_WIDTH = 1000;
+const DEFAULT_HEIGHT = 800;
+
+// Simulation Physics
+const FORCE_CHARGE_STRENGTH = -300;
+const FORCE_LINK_DISTANCE = 80;      
+const FORCE_CENTER_STRENGTH = 0.06;   
+const FORCE_COLLIDE_PADDING = 15;     
+const FORCE_COLLIDE_ITERATIONS = 2;
+
+// Enclosures (Folders)
+const ENCLOSURE_PADDING = 30;         
+const ENCLOSURE_PUSH_FORCE = 0.2;    
+const ENCLOSURE_LEASH_FORCE = 0.1; 
+const ENCLOSURE_FILL_OPACITY = 0.05;
+const ENCLOSURE_STROKE_OPACITY = 0.4;
+
+// Visuals
+const ARROW_ID = 'arrowhead';
+const ARROW_COLOR = '#94a3b8';
+const LINK_COLOR = '#94a3b8';
+const LINK_OPACITY = 0.6;
+const NODE_STROKE_WIDTH = 2;
+
 interface RenderNode extends d3.SimulationNodeDatum {
   id: string;
   label: string;
@@ -50,11 +77,13 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
   private nodes: RenderNode[] = [];
   private links: RenderLink[] = [];
   private expandedNodes = new Set<string>();
+  
+  private currentEnclosures: Enclosure[] = [];
 
   private simulation: any;
   private svg: any;
-  private width = 1000;
-  private height = 800;
+  private width = DEFAULT_WIDTH;
+  private height = DEFAULT_HEIGHT;
 
   private readonly COLORS = {
     DIRECTORY: '#f59e0b', // Amber
@@ -87,7 +116,7 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
         data.nodes.forEach(n => this.allNodesMap.set(n.id, n));
         this.allLinks = data.links;
 
-        // Initial State: Show only root nodes (nodes with no parent)
+        // Initial State: Show only root nodes
         const rootNodes = data.nodes.filter(n => !n.parentId);
         
         this.nodes = rootNodes.map(n => this.createRenderNode(n));
@@ -119,8 +148,8 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
 
   private initSimulation() {
     const el = this.container.nativeElement;
-    this.width = el.clientWidth || 1000;
-    this.height = el.clientHeight || 800;
+    this.width = el.clientWidth || DEFAULT_WIDTH;
+    this.height = el.clientHeight || DEFAULT_HEIGHT;
 
     d3.select(el).selectAll('*').remove();
 
@@ -129,10 +158,23 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
       .attr('height', this.height)
       .attr('viewBox', `${-this.width/2} ${-this.height/2} ${this.width} ${this.height}`);
 
+    // Arrow Marker
+    this.svg.append('defs').append('marker')
+      .attr('id', ARROW_ID)
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 20)
+      .attr('refY', 0)
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,-5L10,0L0,5')
+      .attr('fill', ARROW_COLOR);
+
     const zoomLayer = this.svg.append('g').attr('class', 'zoom-layer');
     
     this.svg.call(d3.zoom()
-      .scaleExtent([0.1, 8])
+      .scaleExtent([ZOOM_MIN, ZOOM_MAX])
       .on('zoom', (e: any) => zoomLayer.attr('transform', e.transform))
     );
 
@@ -141,29 +183,32 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
     const gNodes = zoomLayer.append('g').attr('class', 'nodes');
 
     this.simulation = d3.forceSimulation(this.nodes)
-      .force('charge', d3.forceManyBody().strength(-400))
-      .force('link', d3.forceLink(this.links).id((d: any) => d.id).distance(120))
-      .force('x', d3.forceX())
-      .force('y', d3.forceY())
-      .force('collide', d3.forceCollide().radius((d: any) => d.r + 20).iterations(2));
+      .force('charge', d3.forceManyBody().strength(FORCE_CHARGE_STRENGTH))
+      .force('link', d3.forceLink(this.links).id((d: any) => d.id).distance(FORCE_LINK_DISTANCE))
+      .force('x', d3.forceX().strength(FORCE_CENTER_STRENGTH))
+      .force('y', d3.forceY().strength(FORCE_CENTER_STRENGTH))
+      .force('collide', d3.forceCollide().radius((d: any) => d.r + FORCE_COLLIDE_PADDING).iterations(FORCE_COLLIDE_ITERATIONS))
+      .force('cluster', this.forceCluster())
+      .force('enclosure', this.forceEnclosure());
 
     this.simulation.on('tick', () => {
-      // Links
+      // Update Links
       gLinks.selectAll('line')
         .data(this.links)
         .join('line')
-        .attr('stroke', '#94a3b8')
-        .attr('stroke-opacity', 0.4)
+        .attr('stroke', LINK_COLOR)
+        .attr('stroke-opacity', LINK_OPACITY)
         .attr('stroke-width', 1.5)
+        .attr('marker-end', `url(#${ARROW_ID})`)
         .attr('x1', (d: any) => d.source.x)
         .attr('y1', (d: any) => d.source.y)
-        .attr('x2', (d: any) => d.target.x)
-        .attr('y2', (d: any) => d.target.y);
+        .attr('x2', (d: any) => this.shortenLine(d.source, d.target).x)
+        .attr('y2', (d: any) => this.shortenLine(d.source, d.target).y);
 
-      // Nodes
+      // Update Nodes
       const nodeSel = gNodes.selectAll('g.node')
         .data(this.nodes, (d: any) => d.id);
-
+      
       const nodeEnter = nodeSel.enter().append('g')
         .attr('class', 'node')
         .style('cursor', 'pointer')
@@ -184,7 +229,7 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
         .attr('r', (d: any) => d.r)
         .attr('fill', (d: any) => d.color)
         .attr('stroke', '#fff')
-        .attr('stroke-width', 2);
+        .attr('stroke-width', NODE_STROKE_WIDTH);
       
       nodeEnter.append('text')
         .text((d: any) => d.label)
@@ -199,127 +244,116 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
       
       nodeSel.exit().remove();
 
-      // Enclosures
-      this.drawEnclosures(gEnclosures);
+      // Draw Enclosures
+      this.drawEnclosures(gEnclosures, this.currentEnclosures);
     });
   }
 
-  private drawEnclosures(layer: any) {
-    const enclosures: Enclosure[] = [];
+  // --- FORCES ---
 
+  private forceCluster() {
+    const strength = 0.2;
+    return (alpha: number) => {
+      const groups = d3.group(this.nodes, d => d.parentId);
+      groups.forEach((groupNodes) => {
+        if (groupNodes.length <= 1) return;
+        
+        let cx = 0, cy = 0;
+        groupNodes.forEach(n => { cx += n.x!; cy += n.y!; });
+        cx /= groupNodes.length;
+        cy /= groupNodes.length;
+        
+        const k = strength * alpha;
+        groupNodes.forEach(n => {
+          n.vx! -= (n.x! - cx) * k;
+          n.vy! -= (n.y! - cy) * k;
+        });
+      });
+    };
+  }
+
+  private forceEnclosure() {
+    return (alpha: number) => {
+      this.currentEnclosures = this.calculateEnclosures();
+
+      this.currentEnclosures.forEach(enc => {
+        this.nodes.forEach(node => {
+          const isInside = this.isDescendant(node.id, enc.id);
+          
+          const dx = node.x! - enc.x;
+          const dy = node.y! - enc.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
+
+          if (isInside) {
+            // LEASH FORCE: Keep children inside
+            const maxDist = enc.r - node.r - 5;
+            if (dist > maxDist) {
+               const k = ENCLOSURE_LEASH_FORCE * alpha;
+               const move = dist - maxDist;
+               node.vx! -= (dx / dist) * move * k;
+               node.vy! -= (dy / dist) * move * k;
+            }
+          } else {
+            // PUSH FORCE: Keep outsiders out
+            const minDist = enc.r + node.r + 10;
+            if (dist < minDist) {
+              const overlap = minDist - dist;
+              const k = ENCLOSURE_PUSH_FORCE * alpha * 5;
+              node.vx! += (dx / dist) * overlap * k;
+              node.vy! += (dy / dist) * overlap * k;
+            }
+          }
+        });
+      });
+    };
+  }
+
+  // --- HELPERS ---
+
+  private calculateEnclosures(): Enclosure[] {
+    const enclosures: Enclosure[] = [];
     this.expandedNodes.forEach(parentId => {
-      const children = this.nodes.filter(n => n.parentId === parentId);
-      if (children.length > 0) {
+      // Include all visible descendants to ensure nested folders are wrapped
+      const descendants = this.nodes.filter(n => this.isDescendant(n.id, parentId));
+      
+      if (descendants.length > 0) {
         const pData = this.allNodesMap.get(parentId);
-        const circle = d3.packEnclose(children as any);
+        const circle = d3.packEnclose(descendants as any);
         if (circle) {
           enclosures.push({
             id: parentId,
             x: circle.x,
             y: circle.y,
-            r: circle.r + 15,
+            r: circle.r + ENCLOSURE_PADDING,
             label: pData?.label || '',
             color: this.COLORS[pData?.type as NodeType] || '#ccc'
           });
         }
       }
     });
-
-    const sel = layer.selectAll('g.enclosure')
-      .data(enclosures, (d: any) => d.id);
-
-    const enter = sel.enter().append('g').attr('class', 'enclosure');
-
-    enter.append('circle')
-      .attr('fill', (d: any) => d.color)
-      .attr('fill-opacity', 0.1)
-      .attr('stroke', (d: any) => d.color)
-      .attr('stroke-opacity', 0.5)
-      .attr('stroke-dasharray', '4 2')
-      .on('click', (e: any, d: Enclosure) => this.collapse(d.id));
-
-    enter.append('text')
-      .attr('text-anchor', 'middle')
-      .attr('fill', (d: any) => d.color)
-      .style('font-size', '12px')
-      .style('font-weight', 'bold')
-      .style('pointer-events', 'none');
-
-    const merged = sel.merge(enter);
-
-    merged.select('circle')
-      .transition().duration(300)
-      .attr('cx', (d: any) => d.x)
-      .attr('cy', (d: any) => d.y)
-      .attr('r', (d: any) => d.r);
-
-    merged.select('text')
-      .text((d: any) => d.label)
-      .attr('x', (d: any) => d.x)
-      .attr('y', (d: any) => d.y - d.r - 5);
-
-    sel.exit().remove();
+    return enclosures;
   }
 
-  private handleNodeClick(event: MouseEvent, node: RenderNode) {
-    const original = this.allNodesMap.get(node.id);
-    if (!original || !original.children || original.children.length === 0) return;
-    this.expand(node);
-  }
-
-  private expand(parent: RenderNode) {
-    this.expandedNodes.add(parent.id);
-    this.nodes = this.nodes.filter(n => n.id !== parent.id);
-    
-    const children = this.allNodesMap.get(parent.id)!.children!;
-    const newNodes = children.map(c => this.createRenderNode(c, parent.x, parent.y));
-    this.nodes.push(...newNodes);
-    
-    this.updateSimulation();
-  }
-
-  private collapse(parentId: string) {
-    this.expandedNodes.delete(parentId);
-    
-    const isDescendant = (id: string): boolean => {
-      const n = this.allNodesMap.get(id);
-      if (!n || !n.parentId) return false;
-      if (n.parentId === parentId) return true;
-      return isDescendant(n.parentId);
-    };
-
-    this.nodes = this.nodes.filter(n => !isDescendant(n.id));
-    
-    const parentData = this.allNodesMap.get(parentId)!;
-    // Find center of current children to place parent
-    const children = this.nodes.filter(n => n.parentId === parentId); // Actually they are gone now? No, wait.
-    // We removed descendants above. We need to place parent somewhere.
-    // Let's place it at 0,0 or try to find where the group was.
-    // For simplicity, 0,0 or random is fine, the force will fix it.
-    this.nodes.push(this.createRenderNode(parentData, 0, 0));
-    
-    this.updateSimulation();
-  }
-
-  private updateSimulation() {
-    this.updateLinks();
-    this.simulation.nodes(this.nodes);
-    this.simulation.force('link').links(this.links);
-    this.simulation.alpha(0.8).restart();
+  private isDescendant(nodeId: string, ancestorId: string): boolean {
+    let curr = this.allNodesMap.get(nodeId);
+    while (curr && curr.parentId) {
+      if (curr.parentId === ancestorId) return true;
+      curr = this.allNodesMap.get(curr.parentId);
+    }
+    return false;
   }
 
   private updateLinks() {
-    // Aggregate links: Find highest visible ancestor for every link in the system
     const visibleNodeIds = new Set(this.nodes.map(n => n.id));
     const visibleNodeMap = new Map(this.nodes.map(n => [n.id, n]));
     const newLinks = new Map<string, RenderLink>();
 
-    // Helper to find visible ancestor
     const findVisible = (id: string): string | undefined => {
-      let curr: string | undefined = id;
-      while (curr) {
-        if (visibleNodeIds.has(curr)) return curr;
-        curr = this.allNodesMap.get(curr)?.parentId;
+      if (visibleNodeIds.has(id)) return id;
+      let curr = this.allNodesMap.get(id);
+      while (curr && curr.parentId) {
+        if (visibleNodeIds.has(curr.parentId)) return curr.parentId;
+        curr = this.allNodesMap.get(curr.parentId);
       }
       return undefined;
     };
@@ -336,10 +370,106 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
             target: visibleNodeMap.get(targetId)!,
             value: 1
           });
+        } else {
+          newLinks.get(key)!.value++;
         }
       }
     });
 
     this.links = Array.from(newLinks.values());
+  }
+
+  private handleNodeClick(event: MouseEvent, node: RenderNode) {
+    const original = this.allNodesMap.get(node.id);
+    if (!original || !original.children || original.children.length === 0) return;
+    
+    // Expand
+    this.expandedNodes.add(node.id);
+    this.nodes = this.nodes.filter(n => n.id !== node.id);
+    
+    const children = original.children.map(c => this.createRenderNode(c, node.x, node.y));
+    this.nodes.push(...children);
+    
+    this.updateSimulation();
+  }
+
+  private collapse(parentId: string) {
+    this.expandedNodes.delete(parentId);
+    
+    // Remove all descendants
+    this.nodes = this.nodes.filter(n => !this.isDescendant(n.id, parentId));
+    
+    // Restore parent
+    const parentData = this.allNodesMap.get(parentId)!;
+    // Try to place parent at center of where children were
+    const enc = this.currentEnclosures.find(e => e.id === parentId);
+    const x = enc ? enc.x : 0;
+    const y = enc ? enc.y : 0;
+    
+    this.nodes.push(this.createRenderNode(parentData, x, y));
+    
+    this.updateSimulation();
+  }
+
+  private updateSimulation() {
+    this.updateLinks();
+    this.simulation.nodes(this.nodes);
+    this.simulation.force('link').links(this.links);
+    this.simulation.alpha(0.8).restart();
+  }
+
+  private shortenLine(source: any, target: any) {
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return { x: target.x, y: target.y };
+    
+    const gap = target.r + 8; 
+    const t = 1 - gap / dist;
+    
+    if (t < 0) return { x: target.x, y: target.y };
+    
+    return { 
+      x: source.x + dx * t, 
+      y: source.y + dy * t 
+    };
+  }
+
+  private drawEnclosures(layer: any, enclosures: Enclosure[]) {
+    const sel = layer.selectAll('g.enclosure')
+      .data(enclosures, (d: any) => d.id);
+
+    const enter = sel.enter().append('g').attr('class', 'enclosure');
+
+    enter.append('circle')
+      .attr('fill', (d: any) => d.color)
+      .attr('fill-opacity', ENCLOSURE_FILL_OPACITY)
+      .attr('stroke', (d: any) => d.color)
+      .attr('stroke-opacity', ENCLOSURE_STROKE_OPACITY)
+      .attr('stroke-dasharray', '4 2')
+      .attr('stroke-width', 1.5)
+      .on('click', (e: any, d: Enclosure) => this.collapse(d.id));
+
+    enter.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('fill', (d: any) => d.color)
+      .style('font-size', '11px')
+      .style('font-weight', 'bold')
+      .style('pointer-events', 'none')
+      .style('text-transform', 'uppercase');
+
+    const merged = sel.merge(enter);
+
+    merged.select('circle')
+      .attr('cx', (d: any) => d.x)
+      .attr('cy', (d: any) => d.y)
+      .attr('r', (d: any) => d.r);
+
+    merged.select('text')
+      .text((d: any) => d.label)
+      .attr('x', (d: any) => d.x)
+      .attr('y', (d: any) => d.y - d.r - 8);
+
+    sel.exit().remove();
   }
 }

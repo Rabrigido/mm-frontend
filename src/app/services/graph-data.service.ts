@@ -13,6 +13,7 @@ export interface GraphNode {
   loc?: number;
   x?: number;
   y?: number;
+  depth?: number; // Added depth for rendering order
 }
 
 export interface GraphLink {
@@ -27,7 +28,7 @@ export interface HierarchicalData {
   links: GraphLink[];
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({  providedIn: 'root' })
 export class GraphDataService {
   private metrics = inject(MetricsService);
 
@@ -65,6 +66,7 @@ export class GraphDataService {
       
       let currentPath = '';
       let parentId: string | undefined = undefined;
+      let depth = 0;
 
       // Create Directory Nodes
       parts.forEach(part => {
@@ -76,7 +78,8 @@ export class GraphDataService {
             label: part,
             type: 'DIRECTORY',
             parentId: parentId,
-            children: []
+            children: [],
+            depth: depth
           };
           nodesMap.set(id, dirNode);
           
@@ -89,6 +92,7 @@ export class GraphDataService {
         
         currentPath = id;
         parentId = id;
+        depth++;
       });
 
       // Create File Node
@@ -98,7 +102,8 @@ export class GraphDataService {
         type: 'FILE',
         parentId: parentId,
         children: [],
-        loc: data.loc?.byFile?.[path]?.loc || 10
+        loc: data.loc?.byFile?.[path]?.loc || 10,
+        depth: depth
       };
       nodesMap.set(path, fileNode);
 
@@ -126,7 +131,7 @@ export class GraphDataService {
       if (!nodesMap.has(file)) return;
       const parent = nodesMap.get(file)!;
 
-      Object.keys(clsMap).forEach(className => {
+      Object.entries(clsMap).forEach(([className, details]: [string, any]) => {
         const id = `${file}::${className}`;
         const node: GraphNode = {
           id,
@@ -134,10 +139,33 @@ export class GraphDataService {
           type: 'CLASS',
           parentId: file,
           children: [],
-          loc: 1
+          loc: 1,
+          depth: (parent.depth || 0) + 1
         };
         nodesMap.set(id, node);
         parent.children?.push(node);
+
+        // FIX: Extract methods directly from class details if available
+        // This ensures methods are listed as children of the class
+        const methods = details.methods || [];
+        if (Array.isArray(methods)) {
+          methods.forEach((methodName: string) => {
+            const methodId = `${id}::${methodName}`;
+            // Avoid duplicates if function processing also finds it
+            if (!nodesMap.has(methodId)) {
+              const methodNode: GraphNode = {
+                id: methodId,
+                label: methodName,
+                type: 'FUNCTION',
+                parentId: id,
+                loc: 1,
+                depth: (node.depth || 0) + 1
+              };
+              nodesMap.set(methodId, methodNode);
+              node.children?.push(methodNode);
+            }
+          });
+        }
       });
     });
 
@@ -165,20 +193,26 @@ export class GraphDataService {
       const fileNode = nodesMap.get(file)!;
 
       Object.keys(funcMap).forEach(funcName => {
-        // Check if function belongs to a class
+        // Check if function belongs to a class (by naming convention)
         const parentClass = fileNode.children?.find(c => 
           c.type === 'CLASS' && (funcName.startsWith(c.label + '.') || funcName.startsWith(c.label + '::'))
         );
         
+        // If we already created this node via class methods, skip or update
         const id = `${file}::${funcName}`;
+        if (nodesMap.has(id)) return; 
+
         const label = funcName.split('.').pop() || funcName;
-        
+        const parentId = parentClass ? parentClass.id : file;
+        const parentDepth = parentClass ? parentClass.depth : fileNode.depth;
+
         const node: GraphNode = {
           id,
           label,
           type: 'FUNCTION',
-          parentId: parentClass ? parentClass.id : file,
-          loc: 1
+          parentId: parentId,
+          loc: 1,
+          depth: (parentDepth || 0) + 1
         };
 
         nodesMap.set(id, node);
@@ -187,7 +221,7 @@ export class GraphDataService {
           parentClass.children = parentClass.children || [];
           parentClass.children.push(node);
         } else {
-          // Optional: Add standalone functions to file
+          // Optional: Add standalone functions to file children if needed
           // fileNode.children?.push(node);
         }
       });
@@ -197,22 +231,67 @@ export class GraphDataService {
     const fnCoupling = data.funcCoupling?.result || {};
     Object.entries(fnCoupling).forEach(([file, fnMap]: [string, any]) => {
       Object.entries(fnMap).forEach(([fnName, details]: [string, any]) => {
-        const srcId = `${file}::${fnName}`;
-        if (!nodesMap.has(srcId)) return;
+        // Construct ID consistent with how nodes are created
+        // If function is inside a class, the ID format is file::ClassName::MethodName
+        // If standalone, it might be file::functionName
+        
+        // We need to find the actual node ID for this function name
+        const srcNode = this.findFunctionNode(nodesMap, file, fnName);
+        if (!srcNode) return;
 
         const fanOut = details['fan-out'] || {};
         Object.entries(fanOut).forEach(([targetFn, count]: [string, any]) => {
-          let targetId = targetFn.includes('::') ? targetFn : undefined;
-          if (!targetId && nodesMap.has(`${file}::${targetFn}`)) targetId = `${file}::${targetFn}`;
-
-          if (targetId && nodesMap.has(targetId)) {
-            links.push({ source: srcId, target: targetId, value: Number(count), type: 'CALL' });
-          }
+            // Target might be in another file or same file
+            // We need a robust way to find the target node ID
+            const targetNode = this.findFunctionNodeGlobal(nodesMap, targetFn);
+            
+            if (targetNode && targetNode.id !== srcNode.id) {
+                links.push({ 
+                    source: srcNode.id, 
+                    target: targetNode.id, 
+                    value: Number(count), 
+                    type: 'CALL' 
+                });
+            }
         });
       });
     });
 
     return { nodes: Array.from(nodesMap.values()), links };
+  }
+
+  private findFunctionNode(map: Map<string, GraphNode>, file: string, funcName: string): GraphNode | undefined {
+      // Try exact match first
+      let id = `${file}::${funcName}`;
+      if (map.has(id)) return map.get(id);
+
+      // Try to find if it's a method in a class in this file
+      // funcName might be "ClassName.methodName" or just "methodName"
+      for (const node of map.values()) {
+          if (node.parentId === file || node.id.startsWith(file)) {
+             if (node.label === funcName) return node;
+             if (node.id.endsWith(`::${funcName}`)) return node;
+          }
+      }
+      return undefined;
+  }
+
+  private findFunctionNodeGlobal(map: Map<string, GraphNode>, funcName: string): GraphNode | undefined {
+      // funcName could be "methodName", "ClassName.methodName", or "file::methodName"
+      for (const node of map.values()) {
+          if (node.type === 'FUNCTION') {
+              if (node.label === funcName) return node;
+              if (node.id.endsWith(`::${funcName}`)) return node;
+              // Check for Class.method format
+              const parts = node.id.split('::');
+              if (parts.length >= 3) {
+                  const method = parts.pop();
+                  const cls = parts.pop();
+                  if (`${cls}.${method}` === funcName) return node;
+              }
+          }
+      }
+      return undefined;
   }
 
   private findClassId(map: Map<string, GraphNode>, shortName: string): string | undefined {
