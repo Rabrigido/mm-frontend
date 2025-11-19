@@ -13,7 +13,7 @@ export interface GraphNode {
   loc?: number;
   x?: number;
   y?: number;
-  depth?: number; // Added depth for rendering order
+  depth?: number;
 }
 
 export interface GraphLink {
@@ -28,7 +28,7 @@ export interface HierarchicalData {
   links: GraphLink[];
 }
 
-@Injectable({  providedIn: 'root' })
+@Injectable({ providedIn: 'root' })
 export class GraphDataService {
   private metrics = inject(MetricsService);
 
@@ -54,7 +54,6 @@ export class GraphDataService {
     const links: GraphLink[] = [];
 
     // --- 1. DIRECTORIES & FILES ---
-    // Handle different API response formats for 'files'
     let filePaths: string[] = [];
     if (Array.isArray(data.files)) filePaths = data.files;
     else if (Array.isArray(data.files?.result)) filePaths = data.files.result;
@@ -114,7 +113,7 @@ export class GraphDataService {
       }
     });
 
-    // File Dependencies
+    // File Dependencies (Imports)
     const depGraph = data.dependencies?.graph || {};
     Object.entries(depGraph).forEach(([src, imports]: [string, any]) => {
       if (!nodesMap.has(src)) return;
@@ -145,13 +144,11 @@ export class GraphDataService {
         nodesMap.set(id, node);
         parent.children?.push(node);
 
-        // FIX: Extract methods directly from class details if available
-        // This ensures methods are listed as children of the class
+        // Create nodes for methods listed in classes-per-file
         const methods = details.methods || [];
         if (Array.isArray(methods)) {
           methods.forEach((methodName: string) => {
             const methodId = `${id}::${methodName}`;
-            // Avoid duplicates if function processing also finds it
             if (!nodesMap.has(methodId)) {
               const methodNode: GraphNode = {
                 id: methodId,
@@ -169,24 +166,7 @@ export class GraphDataService {
       });
     });
 
-    // Class Coupling
-    const clsCoupling = data.classCoupling?.result || {};
-    Object.entries(clsCoupling).forEach(([file, clsMap]: [string, any]) => {
-      Object.entries(clsMap).forEach(([clsName, details]: [string, any]) => {
-        const srcId = `${file}::${clsName}`;
-        if (!nodesMap.has(srcId)) return;
-
-        const fanOut = details['fan-out'] || {};
-        Object.entries(fanOut).forEach(([targetCls, count]: [string, any]) => {
-          const targetId = this.findClassId(nodesMap, targetCls);
-          if (targetId && targetId !== srcId) {
-            links.push({ source: srcId, target: targetId, value: Number(count), type: 'COUPLING' });
-          }
-        });
-      });
-    });
-
-    // --- 3. FUNCTIONS ---
+    // --- 3. FUNCTIONS (Standalone & Mapping) ---
     const funcsObj = data.funcs?.result || {};
     Object.entries(funcsObj).forEach(([file, funcMap]: [string, any]) => {
       if (!nodesMap.has(file)) return;
@@ -198,7 +178,6 @@ export class GraphDataService {
           c.type === 'CLASS' && (funcName.startsWith(c.label + '.') || funcName.startsWith(c.label + '::'))
         );
         
-        // If we already created this node via class methods, skip or update
         const id = `${file}::${funcName}`;
         if (nodesMap.has(id)) return; 
 
@@ -221,28 +200,61 @@ export class GraphDataService {
           parentClass.children = parentClass.children || [];
           parentClass.children.push(node);
         } else {
-          // Optional: Add standalone functions to file children if needed
-          // fileNode.children?.push(node);
+          // FIX: Add standalone functions to file children
+          fileNode.children = fileNode.children || [];
+          fileNode.children.push(node);
         }
       });
     });
 
-    // Function Coupling
+    // --- 4. CLASS COUPLING (Links) ---
+    const clsCoupling = data.classCoupling?.result || {};
+    Object.entries(clsCoupling).forEach(([file, clsMap]: [string, any]) => {
+      Object.entries(clsMap).forEach(([clsName, methods]: [string, any]) => {
+        // API returns an array of method objects for each class
+        if (!Array.isArray(methods)) return;
+
+        methods.forEach((method: any) => {
+            const methodName = method.key?.name;
+            if (!methodName) return;
+
+            const srcId = `${file}::${clsName}::${methodName}`;
+            
+            // Process Fan-Out
+            const fanOut = method['fan-out'] || {};
+            Object.entries(fanOut).forEach(([targetCls, targetMethods]: [string, any]) => {
+                // targetMethods is { "methodName": count }
+                Object.entries(targetMethods).forEach(([targetMethodName, count]: [string, any]) => {
+                    // Find the file where targetCls is defined
+                    const targetClassId = this.findClassId(nodesMap, targetCls);
+                    
+                    if (targetClassId) {
+                        const targetId = `${targetClassId}::${targetMethodName}`;
+                        
+                        // Create link if both nodes exist
+                        if (nodesMap.has(srcId) && nodesMap.has(targetId)) {
+                             links.push({ source: srcId, target: targetId, value: Number(count), type: 'COUPLING' });
+                        } 
+                        // Fallback: Link method to class if target method node missing
+                        else if (nodesMap.has(srcId)) {
+                             links.push({ source: srcId, target: targetClassId, value: Number(count), type: 'COUPLING' });
+                        }
+                    }
+                });
+            });
+        });
+      });
+    });
+
+    // --- 5. FUNCTION COUPLING (Links) ---
     const fnCoupling = data.funcCoupling?.result || {};
     Object.entries(fnCoupling).forEach(([file, fnMap]: [string, any]) => {
       Object.entries(fnMap).forEach(([fnName, details]: [string, any]) => {
-        // Construct ID consistent with how nodes are created
-        // If function is inside a class, the ID format is file::ClassName::MethodName
-        // If standalone, it might be file::functionName
-        
-        // We need to find the actual node ID for this function name
         const srcNode = this.findFunctionNode(nodesMap, file, fnName);
         if (!srcNode) return;
 
         const fanOut = details['fan-out'] || {};
         Object.entries(fanOut).forEach(([targetFn, count]: [string, any]) => {
-            // Target might be in another file or same file
-            // We need a robust way to find the target node ID
             const targetNode = this.findFunctionNodeGlobal(nodesMap, targetFn);
             
             if (targetNode && targetNode.id !== srcNode.id) {
@@ -261,12 +273,19 @@ export class GraphDataService {
   }
 
   private findFunctionNode(map: Map<string, GraphNode>, file: string, funcName: string): GraphNode | undefined {
-      // Try exact match first
+      // 1. Try exact ID match
       let id = `${file}::${funcName}`;
       if (map.has(id)) return map.get(id);
 
-      // Try to find if it's a method in a class in this file
-      // funcName might be "ClassName.methodName" or just "methodName"
+      // 2. Try finding it as a child of the file (standalone)
+      const fileNode = map.get(file);
+      if (fileNode && fileNode.children) {
+          const child = fileNode.children.find(c => c.label === funcName && c.type === 'FUNCTION');
+          if (child) return child;
+      }
+
+      // 3. Try finding it as a method of a class in the file
+      // funcName might be "ClassName.methodName"
       for (const node of map.values()) {
           if (node.parentId === file || node.id.startsWith(file)) {
              if (node.label === funcName) return node;
@@ -277,12 +296,15 @@ export class GraphDataService {
   }
 
   private findFunctionNodeGlobal(map: Map<string, GraphNode>, funcName: string): GraphNode | undefined {
-      // funcName could be "methodName", "ClassName.methodName", or "file::methodName"
       for (const node of map.values()) {
           if (node.type === 'FUNCTION') {
+              // Exact label match
               if (node.label === funcName) return node;
+              
+              // ID suffix match (file::funcName)
               if (node.id.endsWith(`::${funcName}`)) return node;
-              // Check for Class.method format
+              
+              // Class.method match
               const parts = node.id.split('::');
               if (parts.length >= 3) {
                   const method = parts.pop();
