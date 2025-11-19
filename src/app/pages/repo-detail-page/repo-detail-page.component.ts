@@ -6,7 +6,7 @@ import { Repo } from '../../models/repo';
 import { ScanResult } from '../../models/scan-result';
 import { LocSlocComponent } from '../../components/loc-sloc/loc-sloc.component';
 import * as echarts from 'echarts';
-import { ReportsNavbarComponent, ReportKey  } from '../../shared/components/reports-navbar/reports-navbar.component';
+import { ReportsNavbarComponent, ReportKey } from '../../shared/components/reports-navbar/reports-navbar.component';
 import { Input } from '@angular/core';
 import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { Observable } from 'rxjs';
@@ -17,8 +17,8 @@ import { ClassesPerFileComponent } from '../../components/classes-per-file/class
 import { FunctionCouplingComponent } from '../../components/function-coupling/function-coupling.component';
 import { ClassCouplingComponent } from '../../components/class-coupling/class-coupling.component';
 import { DependenciesD3Component } from '../../components/dependencies/dependencies-d3.component';
+import { HierarchicalGraphComponent } from '../../components/hierarchical-graph/hierarchical-graph.component';
 type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
-
 
 
 @Component({
@@ -35,8 +35,8 @@ type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
     ClassesPerFileComponent,
     FunctionCouplingComponent,
     ClassCouplingComponent,
-    DependenciesD3Component
- 
+    DependenciesD3Component,
+    HierarchicalGraphComponent // <--- Added
   ],
   templateUrl: './repo-detail-page.component.html',
 })
@@ -65,7 +65,7 @@ export class RepoDetailPageComponent implements OnDestroy {
   loading = signal(false);
   error = signal<string | null>(null);
   id = this.route.snapshot.paramMap.get('id')!;
-@Input() loader?: () => Observable<string[]>;
+  @Input() loader?: () => Observable<string[]>;
   // Tabs de métricas (arriba)
   activeMetric = signal<string>('');
   activeSubtab = signal<'json' | 'charts'>('json');
@@ -106,7 +106,7 @@ export class RepoDetailPageComponent implements OnDestroy {
     if (!files) return false;
     // puede venir como array o como objeto con .result
     return (Array.isArray(files) && files.length > 0) ||
-           (files && Array.isArray(files.result) && files.result.length > 0);
+      (files && Array.isArray(files.result) && files.result.length > 0);
   }
 
 

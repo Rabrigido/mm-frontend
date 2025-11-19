@@ -7,16 +7,12 @@ export type ReportKey =
   | 'dependencies'
   | 'architecture'
   | 'duplication'
-
-
   | 'files'
   | 'functions-per-file'
   | 'classes-per-file'
   | 'function-coupling'
   | 'class-coupling'
-  ;
-
-
+  | 'hierarchical-graph'; 
 
 export interface ReportItem {
   key: ReportKey;
@@ -33,26 +29,21 @@ export interface ReportItem {
 export class ReportsNavbarComponent implements OnChanges {
   @Input() items: ReportItem[] = [
     { key: 'loc-sloc', label: 'LOC / SLOC' },
-    { key: 'cyclomatic-complexity', label: 'Cyclomatic complexity' },
+    { key: 'cyclomatic-complexity', label: 'Complexity' },
+    { key: 'hierarchical-graph', label: 'Explorador Gráfico' }, // <-- Prominent placement
     { key: 'dependencies', label: 'Dependency graph' },
     { key: 'architecture', label: 'Architecture' },
     { key: 'duplication', label: 'Duplication' },
-    
-
-
-
     { key: 'files', label: 'Archivos' },
-
-    { key: 'functions-per-file', label: 'Funciones por Archivo' },
-    { key: 'classes-per-file', label: 'Clases por Archivo' },
-    { key: 'function-coupling', label: 'Acoplamiento de Funciones' },
-    { key: 'class-coupling', label: 'Acoplamiento de Clases' },
+    { key: 'functions-per-file', label: 'Functions' },
+    { key: 'classes-per-file', label: 'Classes' },
+    { key: 'function-coupling', label: 'Func Coupling' },
+    { key: 'class-coupling', label: 'Class Coupling' },
   ];
 
   @Input() selected: ReportKey | null = null;
   @Output() selectedChange = new EventEmitter<ReportKey | null>();
 
-  // Arranca en null; los @Input llegan luego
   private selectedSig = signal<ReportKey | null>(null);
 
   ngOnChanges(changes: SimpleChanges): void {

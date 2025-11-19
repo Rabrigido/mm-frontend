@@ -77,6 +77,10 @@
       <app-loc-sloc *ngSwitchCase="'loc-sloc'" [repoId]="repo()!.id">
       </app-loc-sloc>
 
+      <!-- NEW GRAPH COMPONENT -->
+      <app-hierarchical-graph *ngSwitchCase="'hierarchical-graph'" [repoId]="repo()!.id">
+      </app-hierarchical-graph>
+
       <app-files-metric *ngSwitchCase="'files'" [repoId]="repo()!.id">
       </app-files-metric>
 
@@ -89,7 +93,6 @@
       <app-dependencies-d3 *ngSwitchCase="'dependencies'" [repoId]="repo()!.id">
       </app-dependencies-d3>
 
-
       <app-classes-per-file *ngSwitchCase="'classes-per-file'" [repoId]="repo()!.id">
       </app-classes-per-file>
 
@@ -101,4 +104,5 @@
 
     </ng-container>
   </div>
+
 </div>
