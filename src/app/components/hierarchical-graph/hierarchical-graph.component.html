@@ -1,47 +1,48 @@
-<div class="relative w-full h-[700px] border rounded-xl bg-slate-50 overflow-hidden">
-  <!-- Graph Canvas -->
+<div class="w-full h-[800px] bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden">
+  
+  <!-- Graph Container -->
   <div #graphContainer class="w-full h-full absolute inset-0"></div>
 
-  <!-- Overlay Controls/Info -->
-  <div class="absolute top-4 left-4 bg-white/90 p-3 rounded-lg shadow backdrop-blur-sm text-sm">
-    <h3 class="font-bold mb-1">Navegación Jerárquica</h3>
-    <ul class="space-y-1 text-gray-600">
-      <li class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-indigo-500"></span> Módulos (Carpetas)
-      </li>
-      <li class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-slate-500"></span> Archivos
-      </li>
-      <li class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-pink-500"></span> Clases
-      </li>
-      <li class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-emerald-500"></span> Funciones
-      </li>
-    </ul>
-    <p class="mt-3 text-xs text-gray-500">
-      • Click en un nodo para <strong>expandir</strong> su contenido.<br>
-      • El círculo gris agrupa el contenido (Click para colapsar - <em>WIP</em>).
-    </p>
+  <!-- Legend / Instructions -->
+  <div class="absolute top-4 left-4 bg-white/90 backdrop-blur p-4 rounded-lg shadow-md text-sm border border-slate-100 max-w-xs z-10">
+    <h3 class="font-bold text-slate-800 mb-2">Interactive Dependency Graph</h3>
+    
+    <div class="space-y-2">
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+        <span class="text-slate-600">Folder</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-slate-500"></span>
+        <span class="text-slate-600">File</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-pink-500"></span>
+        <span class="text-slate-600">Class</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+        <span class="text-slate-600">Function</span>
+      </div>
+    </div>
+
+    <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 space-y-1">
+      <p>👉 <strong>Click a node</strong> to drill down (Expand).</p>
+      <p>👉 <strong>Click a dashed circle</strong> to go up (Collapse).</p>
+      <p>🖐 <strong>Drag</strong> to rearrange nodes.</p>
+      <p>🔍 <strong>Scroll</strong> to zoom in/out.</p>
+    </div>
   </div>
 
-  <!-- Selection Details -->
-  <div *ngIf="selectedNode() as node" class="absolute bottom-4 right-4 bg-white p-4 rounded-xl shadow-lg border w-64">
-    <h4 class="font-bold text-lg truncate">{{ node.label }}</h4>
-    <p class="text-xs text-gray-500 mb-2 font-mono">{{ node.id }}</p>
-    <div class="text-sm">
-      <span class="px-2 py-1 rounded text-xs font-bold text-white"
-            [style.background-color]="node.color">
-        {{ node.type }}
-      </span>
-    </div>
-    <button (click)="selectedNode.set(null)" class="mt-3 text-xs text-blue-500 hover:underline">
-      Cerrar
-    </button>
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-50">
+    <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+    <span class="text-indigo-600 font-medium">Calculating Layout...</span>
   </div>
-  
-  <!-- Loading -->
-  <div *ngIf="loading()" class="absolute inset-0 bg-white/80 flex items-center justify-center z-50">
-    <div class="animate-pulse text-indigo-600 font-medium">Construyendo Grafo Jerárquico...</div>
+
+  <!-- Error State -->
+  <div *ngIf="error()" class="absolute inset-0 flex items-center justify-center bg-red-50/90 z-50 text-red-600">
+    {{ error() }}
   </div>
+
 </div>

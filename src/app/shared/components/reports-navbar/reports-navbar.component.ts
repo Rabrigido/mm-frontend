@@ -30,7 +30,7 @@ export class ReportsNavbarComponent implements OnChanges {
   @Input() items: ReportItem[] = [
     { key: 'loc-sloc', label: 'LOC / SLOC' },
     { key: 'cyclomatic-complexity', label: 'Complexity' },
-    { key: 'hierarchical-graph', label: 'Explorador Gráfico' }, // <-- Prominent placement
+    { key: 'hierarchical-graph', label: 'Explorador Gráfico' },  
     { key: 'dependencies', label: 'Dependency graph' },
     { key: 'architecture', label: 'Architecture' },
     { key: 'duplication', label: 'Duplication' },
