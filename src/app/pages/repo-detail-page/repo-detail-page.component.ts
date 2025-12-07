@@ -18,6 +18,8 @@ import { FunctionCouplingComponent } from '../../components/function-coupling/fu
 import { ClassCouplingComponent } from '../../components/class-coupling/class-coupling.component';
 import { DependenciesD3Component } from '../../components/dependencies/dependencies-d3.component';
 import { HierarchicalGraphComponent } from '../../components/hierarchical-graph/hierarchical-graph.component';
+import { ModuleClassGraphComponent } from '../../components/module-class-graph/module-class-graph.component';
+import { ModuleFunctionGraphComponent } from '../../components/module-function-graph/module-function-graph.component';
 type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
 
 
@@ -36,7 +38,10 @@ type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
     FunctionCouplingComponent,
     ClassCouplingComponent,
     DependenciesD3Component,
-    HierarchicalGraphComponent // <--- Added
+    HierarchicalGraphComponent, // <--- Added
+    ModuleClassGraphComponent,    // NEW
+    ModuleFunctionGraphComponent
+
   ],
   templateUrl: './repo-detail-page.component.html',
 })

@@ -11,6 +11,7 @@ export class MetricsService {
 
   getMetric(repoId: string, metricName: string): Observable<any> {
     return this.http.get<any>(`${this.base}/metrics/${repoId}/${metricName}`);
+   
   }
 
 

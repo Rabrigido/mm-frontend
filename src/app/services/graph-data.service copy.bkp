@@ -269,21 +269,21 @@ export class GraphDataService {
     // Build map of function name to file
     Object.entries(funcsObj).forEach(([file, funcMap]: [string, any]) => {
       Object.keys(funcMap).forEach(funcName => {
+        // Store with full reference for lookup
         if (!functionToFileMap.has(funcName)) {
           functionToFileMap.set(funcName, file);
         }
       });
     });
 
-    // Track function call links with direction
-    const functionCallLinks = new Map<string, { count: number; direction: 'fan-out' | 'fan-in' }>();
+    // Aggregate function calls at FUNCTION level
+    const functionCallLinks = new Map<string, number>(); // "func1Id->func2Id" -> count
 
     Object.entries(fnCoupling).forEach(([srcFile, fnMap]: [string, any]) => {
       Object.entries(fnMap).forEach(([srcFuncName, details]: [string, any]) => {
         const srcFuncId = `${srcFile}::${srcFuncName}`;
         if (!nodesMap.has(srcFuncId)) return;
 
-        // Process Fan-Out (srcFunc calls targetFunc)
         const fanOut = details['fan-out'] || {};
         Object.entries(fanOut).forEach(([targetFuncName, count]: [string, any]) => {
           const targetFile = functionToFileMap.get(targetFuncName);
@@ -292,44 +292,17 @@ export class GraphDataService {
           const targetFuncId = `${targetFile}::${targetFuncName}`;
           if (!nodesMap.has(targetFuncId) || srcFuncId === targetFuncId) return;
 
+          // Aggregate count
           const linkKey = `${srcFuncId}->${targetFuncId}`;
-          const existing = functionCallLinks.get(linkKey) || { count: 0, direction: 'fan-out' };
-          functionCallLinks.set(linkKey, { 
-            count: existing.count + Number(count), 
-            direction: 'fan-out' 
-          });
-        });
-
-        // Process Fan-In (targetFunc calls srcFunc - reverse direction)
-        const fanIn = details['fan-in'] || {};
-        Object.entries(fanIn).forEach(([callerFuncName, count]: [string, any]) => {
-          const callerFile = functionToFileMap.get(callerFuncName);
-          if (!callerFile) return;
-
-          const callerFuncId = `${callerFile}::${callerFuncName}`;
-          if (!nodesMap.has(callerFuncId) || srcFuncId === callerFuncId) return;
-
-          // Fan-in: callerFuncId -> srcFuncId
-          const linkKey = `${callerFuncId}->${srcFuncId}`;
-          const existing = functionCallLinks.get(linkKey) || { count: 0, direction: 'fan-in' };
-          functionCallLinks.set(linkKey, { 
-            count: existing.count + Number(count), 
-            direction: 'fan-in' 
-          });
+          functionCallLinks.set(linkKey, (functionCallLinks.get(linkKey) || 0) + Number(count));
         });
       });
     });
 
-    // Convert to link array with direction metadata
-    functionCallLinks.forEach((linkData, linkKey) => {
+    // Convert aggregated links to link array
+    functionCallLinks.forEach((count, linkKey) => {
       const [srcId, targetId] = linkKey.split('->');
-      links.push({ 
-        source: srcId, 
-        target: targetId, 
-        value: linkData.count, 
-        type: 'CALL',
-        direction: linkData.direction
-      });
+      links.push({ source: srcId, target: targetId, value: count, type: 'CALL' });
     });
 
     return { nodes: Array.from(nodesMap.values()), links };

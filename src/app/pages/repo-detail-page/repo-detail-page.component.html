@@ -74,14 +74,20 @@
   <!-- 🔹 Contenedor del reporte seleccionado -->
   <div *ngIf="selectedReport() as rSel" class="my-6">
     <ng-container [ngSwitch]="rSel">
-      <app-loc-sloc *ngSwitchCase="'loc-sloc'" [repoId]="repo()!.id">
+      <!-- <app-loc-sloc *ngSwitchCase="'loc-sloc'" [repoId]="repo()!.id">
       </app-loc-sloc>
+ -->
 
-      <!-- NEW GRAPH COMPONENT -->
       <app-hierarchical-graph *ngSwitchCase="'hierarchical-graph'" [repoId]="repo()!.id">
       </app-hierarchical-graph>
 
-      <app-files-metric *ngSwitchCase="'files'" [repoId]="repo()!.id">
+      <app-module-class-graph *ngSwitchCase="'module-class-graph'" [repoId]="repo()!.id">
+      </app-module-class-graph>
+
+      <app-module-function-graph *ngSwitchCase="'module-function-graph'" [repoId]="repo()!.id">
+      </app-module-function-graph>
+
+      <!-- <app-files-metric *ngSwitchCase="'files'" [repoId]="repo()!.id">
       </app-files-metric>
 
       <app-functions-per-file *ngSwitchCase="'functions-per-file'" [repoId]="repo()!.id">
@@ -100,7 +106,7 @@
       </function-coupling>
 
       <app-class-coupling *ngSwitchCase="'class-coupling'" [repoId]="repo()!.id">
-      </app-class-coupling>
+      </app-class-coupling> -->
 
     </ng-container>
   </div>
