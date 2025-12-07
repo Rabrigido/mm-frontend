@@ -27,15 +27,15 @@ const ARROW_ID = 'arrowhead';
 const LINK_OPACITY = 0.6;
 const NODE_STROKE_WIDTH = 2;
 
-// Link thickness scaling - Based on fan-in/fan-out counts
-const LINK_WIDTH_MIN = 1.5;                 // Minimum line thickness (px)
-const LINK_WIDTH_MAX = 6;                   // Maximum line thickness (px)
-const LINK_WIDTH_SCALE = 0.8;               // Multiplier for value scaling
+// // Link thickness scaling - Based on fan-in/fan-out counts
+// const LINK_WIDTH_MIN = 1.5;                 // Minimum line thickness (px)
+// const LINK_WIDTH_MAX = 6;                   // Maximum line thickness (px)
+// const LINK_WIDTH_SCALE = 0.8;               // Multiplier for value scaling
 
-// Link color scaling - Gradient from subtle to intense
-const LINK_COLOR_LOW = '#cbd5e1';           // Light slate for single links
+// // Link color scaling - Gradient from subtle to intense
+// const LINK_COLOR_LOW = '#cbd5e1';           // Light slate for single links
 const LINK_COLOR_MID = '#64748b';           // Medium slate for moderate coupling
-const LINK_COLOR_HIGH = '#ef4444';          // Red for high coupling
+// const LINK_COLOR_HIGH = '#ef4444';          // Red for high coupling
 
 interface RenderNode extends d3.SimulationNodeDatum {
   id: string;
@@ -197,10 +197,10 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
         .join('line')
         .attr('stroke', (d: any) => this.getLinkColor(d.value))
         .attr('stroke-opacity', LINK_OPACITY)
-        .attr('stroke-width', (d: any) => {
-          const thickness = LINK_WIDTH_MIN + (d.value * LINK_WIDTH_SCALE);
-          return Math.min(LINK_WIDTH_MAX, thickness);
-        })
+        // .attr('stroke-width', (d: any) => {
+        //   const thickness = LINK_WIDTH_MIN + (d.value * LINK_WIDTH_SCALE);
+        //   return Math.min(LINK_WIDTH_MAX, thickness);
+        // })
         .attr('marker-end', (d: any) => `url(#arrowhead-${this.getLinkColor(d.value).replace('#', '')})`)
         .attr('x1', (d: any) => d.source.x)
         .attr('y1', (d: any) => d.source.y)
@@ -482,10 +482,10 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
     
     if (normalized < 0.5) {
       const t = normalized * 2;
-      return this.blendColors(LINK_COLOR_LOW, LINK_COLOR_MID, t);
+      return this.blendColors(LINK_COLOR_MID, LINK_COLOR_MID, t);
     } else {
       const t = (normalized - 0.5) * 2;
-      return this.blendColors(LINK_COLOR_MID, LINK_COLOR_HIGH, t);
+      return this.blendColors(LINK_COLOR_MID,LINK_COLOR_MID, t);
     }
   }
 
