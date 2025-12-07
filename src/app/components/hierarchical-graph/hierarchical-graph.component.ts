@@ -23,7 +23,7 @@ const ENCLOSURE_LEASH_FORCE = 0.1;
 const ENCLOSURE_FILL_OPACITY = 0.05;
 const ENCLOSURE_STROKE_OPACITY = 0.4;
 
-// Visuals
+// Visuals - Single color for all links
 const ARROW_ID = 'arrowhead';
 const ARROW_COLOR = '#94a3b8';
 const LINK_COLOR = '#94a3b8';
@@ -198,7 +198,7 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
         .join('line')
         .attr('stroke', LINK_COLOR)
         .attr('stroke-opacity', LINK_OPACITY)
-        .attr('stroke-width', 1.5)
+        .attr('stroke-width', (d: any) => Math.min(3.5, 1.5 + (d.value * 0.3)))
         .attr('marker-end', `url(#${ARROW_ID})`)
         .attr('x1', (d: any) => d.source.x)
         .attr('y1', (d: any) => d.source.y)

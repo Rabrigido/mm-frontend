@@ -96,7 +96,7 @@ export class GraphDataService {
         parentId = id;
         depth++;
       });
-      console.log(`data: ${JSON.stringify(data)}`);
+
       // Create File Node
       const fileNode: GraphNode = {
         id: path,
@@ -129,12 +129,16 @@ export class GraphDataService {
 
     // --- 2. CLASSES ---
     const classesObj = data.classes?.result || {};
+    const classToFileMap = new Map<string, string>(); // className -> file path
+
     Object.entries(classesObj).forEach(([file, clsMap]: [string, any]) => {
       if (!nodesMap.has(file)) return;
       const parent = nodesMap.get(file)!;
 
       Object.entries(clsMap).forEach(([className, details]: [string, any]) => {
         const id = `${file}::${className}`;
+        classToFileMap.set(className, file);
+
         const node: GraphNode = {
           id,
           label: className,
@@ -150,20 +154,20 @@ export class GraphDataService {
         // Create nodes for methods listed in classes-per-file
         const methods = details.methods || [];
         if (Array.isArray(methods)) {
-          methods.forEach((methodName: string) => {
+          methods.forEach((method: any) => {
+            const methodName = method.key?.name || 'unknown';
             const methodId = `${id}::${methodName}`;
-            if (!nodesMap.has(methodId)) {
-              const methodNode: GraphNode = {
-                id: methodId,
-                label: methodName,
-                type: 'FUNCTION',
-                parentId: id,
-                loc: 1,
-                depth: (node.depth || 0) + 1
-              };
-              nodesMap.set(methodId, methodNode);
-              node.children?.push(methodNode);
-            }
+
+            const methodNode: GraphNode = {
+              id: methodId,
+              label: methodName,
+              type: 'FUNCTION',
+              parentId: id,
+              loc: 1,
+              depth: (node.depth || 0) + 1
+            };
+            nodesMap.set(methodId, methodNode);
+            node.children?.push(methodNode);
           });
         }
       });
@@ -171,6 +175,9 @@ export class GraphDataService {
 
     // --- 3. FUNCTIONS (Standalone & Mapping) ---
     const funcsObj = data.funcs?.result || {};
+    const functionToFileMap = new Map<string, string>(); // funcName -> file path
+    const functionToClassMap = new Map<string, string>(); // funcName -> class id (if method)
+
     Object.entries(funcsObj).forEach(([file, funcMap]: [string, any]) => {
       if (!nodesMap.has(file)) return;
       const fileNode = nodesMap.get(file)!;
@@ -198,85 +205,25 @@ export class GraphDataService {
         };
 
         nodesMap.set(id, node);
+        functionToFileMap.set(funcName, file);
 
         if (parentClass) {
           parentClass.children = parentClass.children || [];
           parentClass.children.push(node);
+          functionToClassMap.set(funcName, parentClass.id);
         } else {
-          // FIX: Add standalone functions to file children
           fileNode.children = fileNode.children || [];
           fileNode.children.push(node);
         }
       });
     });
 
-    // --- 4. CLASS COUPLING (Links) ---
-    // Use class coupling data to find which classes in which files depend on other classes
-    const clsCoupling = data.classCoupling?.result || {};
-    const classToFileMap = new Map<string, string>(); // className -> file path
+    // --- 4. HIERARCHICAL LINK AGGREGATION ---
+    // Build links from bottom-up: FUNCTION -> CLASS -> FILE
 
-    // Build map of class name to file
-    Object.entries(classesObj).forEach(([file, clsMap]: [string, any]) => {
-      Object.keys(clsMap).forEach(className => {
-        classToFileMap.set(className, file);
-      });
-    });
-
-    // Aggregate coupling at CLASS level (not method level)
-    const classCouplingLinks = new Map<string, number>(); // "class1Id->class2Id" -> count
-
-    Object.entries(clsCoupling).forEach(([file, clsMap]: [string, any]) => {
-      Object.entries(clsMap).forEach(([srcClassName, methods]: [string, any]) => {
-        if (!Array.isArray(methods)) return;
-
-        const srcClassId = `${file}::${srcClassName}`;
-        if (!nodesMap.has(srcClassId)) return;
-
-        // Aggregate all method fan-outs to class level
-        methods.forEach((method: any) => {
-          const fanOut = method['fan-out'] || {};
-          Object.entries(fanOut).forEach(([targetClassName, targetMethods]: [string, any]) => {
-            const targetClassFile = classToFileMap.get(targetClassName);
-            if (!targetClassFile) return;
-
-            const targetClassId = `${targetClassFile}::${targetClassName}`;
-            if (!nodesMap.has(targetClassId)) return;
-
-            // Aggregate count for this CLASS->CLASS pair
-            if (srcClassId !== targetClassId) {
-              const linkKey = `${srcClassId}->${targetClassId}`;
-              const totalCount = Object.values(targetMethods as any).reduce((sum: number, val: any) =>
-                sum + (typeof val === 'number' ? val : 0), 0
-              );
-              classCouplingLinks.set(linkKey, (classCouplingLinks.get(linkKey) || 0) + totalCount);
-            }
-          });
-        });
-      });
-    });
-
-    // Convert aggregated links to link array
-    classCouplingLinks.forEach((count, linkKey) => {
-      const [srcId, targetId] = linkKey.split('->');
-      links.push({ source: srcId, target: targetId, value: count, type: 'COUPLING' });
-    });
-
-    // --- 5. FUNCTION COUPLING (Links) ---
-    // Use function coupling data to identify function-to-function calls across files
+    // 4.1 FUNCTION-LEVEL COUPLING (from function-coupling metric)
     const fnCoupling = data.funcCoupling?.result || {};
-    const functionToFileMap = new Map<string, string>(); // funcName -> file path
-
-    // Build map of function name to file
-    Object.entries(funcsObj).forEach(([file, funcMap]: [string, any]) => {
-      Object.keys(funcMap).forEach(funcName => {
-        if (!functionToFileMap.has(funcName)) {
-          functionToFileMap.set(funcName, file);
-        }
-      });
-    });
-
-    // Track function call links with direction
-    const functionCallLinks = new Map<string, { count: number; direction: 'fan-out' | 'fan-in' }>();
+    const functionLinks = new Map<string, { count: number; direction: 'fan-out' | 'fan-in' }>();
 
     Object.entries(fnCoupling).forEach(([srcFile, fnMap]: [string, any]) => {
       Object.entries(fnMap).forEach(([srcFuncName, details]: [string, any]) => {
@@ -293,14 +240,14 @@ export class GraphDataService {
           if (!nodesMap.has(targetFuncId) || srcFuncId === targetFuncId) return;
 
           const linkKey = `${srcFuncId}->${targetFuncId}`;
-          const existing = functionCallLinks.get(linkKey) || { count: 0, direction: 'fan-out' };
-          functionCallLinks.set(linkKey, { 
-            count: existing.count + Number(count), 
-            direction: 'fan-out' 
+          const existing = functionLinks.get(linkKey) || { count: 0, direction: 'fan-out' };
+          functionLinks.set(linkKey, {
+            count: existing.count + Number(count),
+            direction: 'fan-out'
           });
         });
 
-        // Process Fan-In (targetFunc calls srcFunc - reverse direction)
+        // Process Fan-In (other functions call srcFunc)
         const fanIn = details['fan-in'] || {};
         Object.entries(fanIn).forEach(([callerFuncName, count]: [string, any]) => {
           const callerFile = functionToFileMap.get(callerFuncName);
@@ -309,25 +256,185 @@ export class GraphDataService {
           const callerFuncId = `${callerFile}::${callerFuncName}`;
           if (!nodesMap.has(callerFuncId) || srcFuncId === callerFuncId) return;
 
-          // Fan-in: callerFuncId -> srcFuncId
           const linkKey = `${callerFuncId}->${srcFuncId}`;
-          const existing = functionCallLinks.get(linkKey) || { count: 0, direction: 'fan-in' };
-          functionCallLinks.set(linkKey, { 
-            count: existing.count + Number(count), 
-            direction: 'fan-in' 
+          const existing = functionLinks.get(linkKey) || { count: 0, direction: 'fan-in' };
+          functionLinks.set(linkKey, {
+            count: existing.count + Number(count),
+            direction: 'fan-in'
           });
         });
       });
     });
 
-    // Convert to link array with direction metadata
-    functionCallLinks.forEach((linkData, linkKey) => {
+    // Add function-level links to links array
+    functionLinks.forEach((linkData, linkKey) => {
       const [srcId, targetId] = linkKey.split('->');
-      links.push({ 
-        source: srcId, 
-        target: targetId, 
-        value: linkData.count, 
+      links.push({
+        source: srcId,
+        target: targetId,
+        value: linkData.count,
         type: 'CALL',
+        direction: linkData.direction
+      });
+    });
+
+    // 4.2 CLASS-LEVEL COUPLING (aggregated from function-coupling and class-coupling)
+    const classLinks = new Map<string, { count: number; direction: 'fan-out' | 'fan-in' }>();
+
+    // First, aggregate function-level coupling up to CLASS level
+    functionLinks.forEach((linkData, linkKey) => {
+      const [srcFuncId, targetFuncId] = linkKey.split('->');
+      const srcFunc = nodesMap.get(srcFuncId);
+      const targetFunc = nodesMap.get(targetFuncId);
+
+      if (!srcFunc || !targetFunc) return;
+
+      // Find parent classes (could be class method or standalone function)
+      let srcClassId = srcFunc.parentId;
+      let targetClassId = targetFunc.parentId;
+
+      // If parent is a FILE, not a CLASS, skip (we'll handle this at FILE level)
+      const srcClass = nodesMap.get(srcClassId as string);
+      const targetClass = nodesMap.get(targetClassId as string);
+
+      if (srcClass?.type === 'CLASS' && targetClass?.type === 'CLASS' && srcClassId !== targetClassId) {
+        const classLinkKey = `${srcClassId}->${targetClassId}`;
+        const existing = classLinks.get(classLinkKey) || { count: 0, direction: linkData.direction };
+        classLinks.set(classLinkKey, {
+          count: existing.count + linkData.count,
+          direction: linkData.direction
+        });
+      }
+    });
+
+    // Second, add direct class-coupling metric links
+    const clsCoupling = data.classCoupling?.result || {};
+
+    Object.entries(clsCoupling).forEach(([file, clsMap]: [string, any]) => {
+      Object.entries(clsMap).forEach(([srcClassName, methods]: [string, any]) => {
+        if (!Array.isArray(methods)) return;
+
+        const srcClassId = `${file}::${srcClassName}`;
+        if (!nodesMap.has(srcClassId)) return;
+
+        methods.forEach((method: any) => {
+          // Process Fan-Out
+          const fanOut = method['fan-out'] || {};
+          Object.entries(fanOut).forEach(([targetClassName, targetMethods]: [string, any]) => {
+            const targetClassFile = classToFileMap.get(targetClassName);
+            if (!targetClassFile) return;
+
+            const targetClassId = `${targetClassFile}::${targetClassName}`;
+            if (!nodesMap.has(targetClassId) || srcClassId === targetClassId) return;
+
+            const classLinkKey = `${srcClassId}->${targetClassId}`;
+            const totalCount = Object.values(targetMethods as any).reduce((sum: number, val: any) =>
+              sum + (typeof val === 'number' ? val : 0), 0
+            );
+
+            const existing = classLinks.get(classLinkKey) || { count: 0, direction: 'fan-out' };
+            classLinks.set(classLinkKey, {
+              count: existing.count + totalCount,
+              direction: 'fan-out'
+            });
+          });
+
+          // Process Fan-In
+          const fanIn = method['fan-in'] || {};
+          Object.entries(fanIn).forEach(([callerClassName, callerMethods]: [string, any]) => {
+            const callerClassFile = classToFileMap.get(callerClassName);
+            if (!callerClassFile) return;
+
+            const callerClassId = `${callerClassFile}::${callerClassName}`;
+            if (!nodesMap.has(callerClassId) || srcClassId === callerClassId) return;
+
+            const classLinkKey = `${callerClassId}->${srcClassId}`;
+            const totalCount = Object.values(callerMethods as any).reduce((sum: number, val: any) =>
+              sum + (typeof val === 'number' ? val : 0), 0
+            );
+
+            const existing = classLinks.get(classLinkKey) || { count: 0, direction: 'fan-in' };
+            classLinks.set(classLinkKey, {
+              count: existing.count + totalCount,
+              direction: 'fan-in'
+            });
+          });
+        });
+      });
+    });
+
+    // Add class-level links to links array
+    classLinks.forEach((linkData, linkKey) => {
+      const [srcId, targetId] = linkKey.split('->');
+      links.push({
+        source: srcId,
+        target: targetId,
+        value: linkData.count,
+        type: 'COUPLING',
+        direction: linkData.direction
+      });
+    });
+
+    // 4.3 FILE-LEVEL COUPLING (aggregated from class-level and function-level)
+    const fileLinks = new Map<string, { count: number; direction: 'fan-out' | 'fan-in' }>();
+
+    // Aggregate class coupling up to FILE level
+    classLinks.forEach((linkData, linkKey) => {
+      const [srcClassId, targetClassId] = linkKey.split('->');
+      const srcClass = nodesMap.get(srcClassId);
+      const targetClass = nodesMap.get(targetClassId);
+
+      if (!srcClass || !targetClass || srcClass.type !== 'CLASS' || targetClass.type !== 'CLASS') return;
+
+      const srcFileId = srcClass.parentId!;
+      const targetFileId = targetClass.parentId!;
+
+      if (srcFileId !== targetFileId) {
+        const fileLinkKey = `${srcFileId}->${targetFileId}`;
+        const existing = fileLinks.get(fileLinkKey) || { count: 0, direction: linkData.direction };
+        fileLinks.set(fileLinkKey, {
+          count: existing.count + linkData.count,
+          direction: linkData.direction
+        });
+      }
+    });
+
+    // Aggregate standalone function coupling up to FILE level
+    // (when functions don't belong to any class, promote their coupling to FILE level)
+    functionLinks.forEach((linkData, linkKey) => {
+      const [srcFuncId, targetFuncId] = linkKey.split('->');
+      const srcFunc = nodesMap.get(srcFuncId);
+      const targetFunc = nodesMap.get(targetFuncId);
+
+      if (!srcFunc || !targetFunc) return;
+
+      // Only promote if BOTH are standalone (parent is FILE, not CLASS)
+      const srcParent = nodesMap.get(srcFunc.parentId!);
+      const targetParent = nodesMap.get(targetFunc.parentId!);
+
+      if (srcParent?.type === 'FILE' && targetParent?.type === 'FILE') {
+        const srcFileId = srcFunc.parentId!;
+        const targetFileId = targetFunc.parentId!;
+
+        if (srcFileId !== targetFileId) {
+          const fileLinkKey = `${srcFileId}->${targetFileId}`;
+          const existing = fileLinks.get(fileLinkKey) || { count: 0, direction: linkData.direction };
+          fileLinks.set(fileLinkKey, {
+            count: existing.count + linkData.count,
+            direction: linkData.direction
+          });
+        }
+      }
+    });
+
+    // Add file-level links to links array
+    fileLinks.forEach((linkData, linkKey) => {
+      const [srcId, targetId] = linkKey.split('->');
+      links.push({
+        source: srcId,
+        target: targetId,
+        value: linkData.count,
+        type: 'DEPENDENCY',
         direction: linkData.direction
       });
     });

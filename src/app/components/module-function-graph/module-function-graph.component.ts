@@ -25,7 +25,7 @@ const ENCLOSURE_STROKE_OPACITY = 0.4;
 const ARROW_ID_FAN_OUT = 'arrowhead-func-fanout';
 const ARROW_ID_FAN_IN = 'arrowhead-func-fanin';
 const LINK_COLOR_FAN_OUT = '#10b981';  // Emerald
-const LINK_COLOR_FAN_IN = '#8b5cf6';   // Violet
+const LINK_COLOR_FAN_IN = '#10b981';   // Violet
 const LINK_OPACITY = 0.6;
 const NODE_STROKE_WIDTH = 2;
 
