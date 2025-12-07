@@ -4,46 +4,24 @@ import * as d3 from 'd3';
 import { GraphDataService, GraphNode, GraphLink, NodeType } from '../../services/graph-data.service';
 
 // --- CONSTANTS ---
-// const ZOOM_MIN = 0.1;
-// const ZOOM_MAX = 8;
-// const DEFAULT_WIDTH = 1000;
-// const DEFAULT_HEIGHT = 800;
-
-// // Simulation Physics
-// const FORCE_CHARGE_STRENGTH = -150;        // Repulsion between nodes
-// const FORCE_LINK_DISTANCE = 100;            // Desired distance between linked nodes
-// const FORCE_CENTER_STRENGTH = 0.06;        // Gravity toward center
-// const FORCE_COLLIDE_PADDING = 15;          // Collision detection padding
-// const FORCE_COLLIDE_ITERATIONS = 2;        // Collision detection passes
-// // Enclosures (Folders)
-// const ENCLOSURE_PADDING = 12;              // Minimal padding for cleaner look
-// const ENCLOSURE_PUSH_FORCE = 0.08;         // Gentle push (reduced from 0.2)
-// const ENCLOSURE_LEASH_FORCE = 0.08;        // Balanced leash force
-// const ENCLOSURE_FILL_OPACITY = 0.04;       // Very subtle fill
-// const ENCLOSURE_STROKE_OPACITY = 0.35;     // Subtle stroke
-
-
-
-// --- CONSTANTS ---
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 8;
-const DEFAULT_WIDTH = 2000;
+const DEFAULT_WIDTH = 1000;
 const DEFAULT_HEIGHT = 800;
 
 // Simulation Physics
-const FORCE_CHARGE_STRENGTH = -150;        // Repulsion between nodes
-const FORCE_LINK_DISTANCE = 100;            // Desired distance between linked nodes
-const FORCE_CENTER_STRENGTH = 0.06;        // Gravity toward center
-const FORCE_COLLIDE_PADDING = 15;          // Collision detection padding
-const FORCE_COLLIDE_ITERATIONS = 2;        // Collision detection passes
-// Enclosures (Folders)
-const ENCLOSURE_PADDING = 12;              // Minimal padding for cleaner look
-const ENCLOSURE_PUSH_FORCE = 0.1;         // Gentle push (reduced from 0.2)
-const ENCLOSURE_LEASH_FORCE = 0.08;        // Balanced leash force
-const ENCLOSURE_FILL_OPACITY = 0.04;       // Very subtle fill
-const ENCLOSURE_STROKE_OPACITY = 0.35;     // Subtle stroke
+const FORCE_CHARGE_STRENGTH = -300;
+const FORCE_LINK_DISTANCE = 80;      
+const FORCE_CENTER_STRENGTH = 0.06;   
+const FORCE_COLLIDE_PADDING = 15;     
+const FORCE_COLLIDE_ITERATIONS = 2;
 
- 
+// Enclosures (Folders)
+const ENCLOSURE_PADDING = 30;         
+const ENCLOSURE_PUSH_FORCE = 0.2;    
+const ENCLOSURE_LEASH_FORCE = 0.1; 
+const ENCLOSURE_FILL_OPACITY = 0.05;
+const ENCLOSURE_STROKE_OPACITY = 0.4;
 
 // Visuals - Single color for all links
 const ARROW_ID = 'arrowhead';
@@ -78,13 +56,13 @@ interface Enclosure {
 }
 
 @Component({
-  selector: 'app-module-class-graph',
+  selector: 'app-hierarchical-graph',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './module-class-graph.component.html',
-  styleUrls: ['./module-class-graph.component.css']
+  templateUrl: './hierarchical-graph.component.html',
+  styleUrls: ['./hierarchical-graph.component.css']
 })
-export class ModuleClassGraphComponent implements OnInit, OnDestroy {
+export class HierarchicalGraphComponent implements OnInit, OnDestroy {
   private dataService = inject(GraphDataService);
   
   @Input({ required: true }) repoId!: string;
@@ -155,7 +133,6 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
   }
 
   private createRenderNode(n: GraphNode, x = 0, y = 0): RenderNode {
-    
     return {
       id: n.id,
       label: n.label,
@@ -386,13 +363,21 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
       const targetId = findVisible(l.target);
 
       if (sourceId && targetId && sourceId !== targetId) {
-        const key = `${sourceId}-${targetId}`;
+        // Use the original link endpoints as the key to maintain uniqueness
+        // This prevents collapsing method-level links into class-level links
+        const key = `${l.source}=>${l.target}`;
+        
         if (!newLinks.has(key)) {
-          newLinks.set(key, {
-            source: visibleNodeMap.get(sourceId)!,
-            target: visibleNodeMap.get(targetId)!,
-            value: 1
-          });
+          const sourceNode = visibleNodeMap.get(sourceId);
+          const targetNode = visibleNodeMap.get(targetId);
+          
+          if (sourceNode && targetNode) {
+            newLinks.set(key, {
+              source: sourceNode,
+              target: targetNode,
+              value: 1
+            });
+          }
         } else {
           newLinks.get(key)!.value++;
         }
@@ -403,8 +388,7 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
   }
 
   private handleNodeClick(event: MouseEvent, node: RenderNode) {
-
-    console.log(JSON.stringify(node));
+    
     const original = this.allNodesMap.get(node.id);
     if (!original || !original.children || original.children.length === 0) return;
     

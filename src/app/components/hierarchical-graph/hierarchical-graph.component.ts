@@ -6,29 +6,36 @@ import { GraphDataService, GraphNode, GraphLink, NodeType } from '../../services
 // --- CONSTANTS ---
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 8;
-const DEFAULT_WIDTH = 1000;
+const DEFAULT_WIDTH = 2000;
 const DEFAULT_HEIGHT = 800;
 
 // Simulation Physics
-const FORCE_CHARGE_STRENGTH = -300;
-const FORCE_LINK_DISTANCE = 80;      
-const FORCE_CENTER_STRENGTH = 0.06;   
-const FORCE_COLLIDE_PADDING = 15;     
-const FORCE_COLLIDE_ITERATIONS = 2;
-
+const FORCE_CHARGE_STRENGTH = -150;        // Repulsion between nodes
+const FORCE_LINK_DISTANCE = 100;            // Desired distance between linked nodes
+const FORCE_CENTER_STRENGTH = 0.06;        // Gravity toward center
+const FORCE_COLLIDE_PADDING = 15;          // Collision detection padding
+const FORCE_COLLIDE_ITERATIONS = 2;        // Collision detection passes
 // Enclosures (Folders)
-const ENCLOSURE_PADDING = 30;         
-const ENCLOSURE_PUSH_FORCE = 0.2;    
-const ENCLOSURE_LEASH_FORCE = 0.1; 
-const ENCLOSURE_FILL_OPACITY = 0.05;
-const ENCLOSURE_STROKE_OPACITY = 0.4;
+const ENCLOSURE_PADDING = 12;              // Minimal padding for cleaner look
+const ENCLOSURE_PUSH_FORCE = 0.1;          // Gentle push (reduced from 0.2)
+const ENCLOSURE_LEASH_FORCE = 0.08;        // Balanced leash force
+const ENCLOSURE_FILL_OPACITY = 0.04;       // Very subtle fill
+const ENCLOSURE_STROKE_OPACITY = 0.35;     // Subtle stroke
 
-// Visuals - Single color for all links
+// Visuals - Link colors based on coupling intensity
 const ARROW_ID = 'arrowhead';
-const ARROW_COLOR = '#94a3b8';
-const LINK_COLOR = '#94a3b8';
 const LINK_OPACITY = 0.6;
 const NODE_STROKE_WIDTH = 2;
+
+// Link thickness scaling - Based on fan-in/fan-out counts
+const LINK_WIDTH_MIN = 1.5;                 // Minimum line thickness (px)
+const LINK_WIDTH_MAX = 6;                   // Maximum line thickness (px)
+const LINK_WIDTH_SCALE = 0.8;               // Multiplier for value scaling
+
+// Link color scaling - Gradient from subtle to intense
+const LINK_COLOR_LOW = '#cbd5e1';           // Light slate for single links
+const LINK_COLOR_MID = '#64748b';           // Medium slate for moderate coupling
+const LINK_COLOR_HIGH = '#ef4444';          // Red for high coupling
 
 interface RenderNode extends d3.SimulationNodeDatum {
   id: string;
@@ -158,18 +165,8 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
       .attr('height', this.height)
       .attr('viewBox', `${-this.width/2} ${-this.height/2} ${this.width} ${this.height}`);
 
-    // Arrow Marker
-    this.svg.append('defs').append('marker')
-      .attr('id', ARROW_ID)
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 20)
-      .attr('refY', 0)
-      .attr('markerWidth', 6)
-      .attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', ARROW_COLOR);
+    // Arrow Marker (placeholder - will be updated dynamically)
+    this.svg.append('defs');
 
     const zoomLayer = this.svg.append('g').attr('class', 'zoom-layer');
     
@@ -192,14 +189,19 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
       .force('enclosure', this.forceEnclosure());
 
     this.simulation.on('tick', () => {
+      this.updateArrowMarkers();
+      
       // Update Links
       gLinks.selectAll('line')
         .data(this.links)
         .join('line')
-        .attr('stroke', LINK_COLOR)
+        .attr('stroke', (d: any) => this.getLinkColor(d.value))
         .attr('stroke-opacity', LINK_OPACITY)
-        .attr('stroke-width', (d: any) => Math.min(3.5, 1.5 + (d.value * 0.3)))
-        .attr('marker-end', `url(#${ARROW_ID})`)
+        .attr('stroke-width', (d: any) => {
+          const thickness = LINK_WIDTH_MIN + (d.value * LINK_WIDTH_SCALE);
+          return Math.min(LINK_WIDTH_MAX, thickness);
+        })
+        .attr('marker-end', (d: any) => `url(#arrowhead-${this.getLinkColor(d.value).replace('#', '')})`)
         .attr('x1', (d: any) => d.source.x)
         .attr('y1', (d: any) => d.source.y)
         .attr('x2', (d: any) => this.shortenLine(d.source, d.target).x)
@@ -313,7 +315,6 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
   private calculateEnclosures(): Enclosure[] {
     const enclosures: Enclosure[] = [];
     this.expandedNodes.forEach(parentId => {
-      // Include all visible descendants to ensure nested folders are wrapped
       const descendants = this.nodes.filter(n => this.isDescendant(n.id, parentId));
       
       if (descendants.length > 0) {
@@ -401,7 +402,6 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
     
     // Restore parent
     const parentData = this.allNodesMap.get(parentId)!;
-    // Try to place parent at center of where children were
     const enc = this.currentEnclosures.find(e => e.id === parentId);
     const x = enc ? enc.x : 0;
     const y = enc ? enc.y : 0;
@@ -471,5 +471,71 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
       .attr('y', (d: any) => d.y - d.r - 8);
 
     sel.exit().remove();
+  }
+
+  /**
+   * Calculates link color based on coupling intensity (value).
+   * Uses gradient: light slate -> medium slate -> red
+   */
+  private getLinkColor(value: number): string {
+    const normalized = Math.min(value / 10, 1);
+    
+    if (normalized < 0.5) {
+      const t = normalized * 2;
+      return this.blendColors(LINK_COLOR_LOW, LINK_COLOR_MID, t);
+    } else {
+      const t = (normalized - 0.5) * 2;
+      return this.blendColors(LINK_COLOR_MID, LINK_COLOR_HIGH, t);
+    }
+  }
+
+  /**
+   * Blends two hex colors together with a factor (0-1).
+   * Factor 0 = colorA, Factor 1 = colorB
+   */
+  private blendColors(colorA: string, colorB: string, factor: number): string {
+    const c1 = parseInt(colorA.slice(1), 16);
+    const c2 = parseInt(colorB.slice(1), 16);
+    
+    const r1 = (c1 >> 16) & 255;
+    const g1 = (c1 >> 8) & 255;
+    const b1 = c1 & 255;
+    
+    const r2 = (c2 >> 16) & 255;
+    const g2 = (c2 >> 8) & 255;
+    const b2 = c2 & 255;
+    
+    const r = Math.round(r1 + (r2 - r1) * factor);
+    const g = Math.round(g1 + (g2 - g1) * factor);
+    const b = Math.round(b1 + (b2 - b1) * factor);
+    
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  }
+
+  /**
+   * Updates arrow markers to match link colors dynamically.
+   * Creates markers for each unique color used by links.
+   */
+  private updateArrowMarkers() {
+    if (!this.links || this.links.length === 0) return;
+
+    const uniqueColors = new Set(this.links.map(l => this.getLinkColor(l.value)));
+    
+    d3.select(this.svg.node().querySelector('defs'))
+      .selectAll('marker')
+      .data(Array.from(uniqueColors), (d: any) => d)
+      .join(
+        (enter: any) => enter.append('marker')
+          .attr('id', (d: any) => `arrowhead-${d.replace('#', '')}`)
+          .attr('viewBox', '0 -5 10 10')
+          .attr('refX', 20)
+          .attr('refY', 0)
+          .attr('markerWidth', 6)
+          .attr('markerHeight', 6)
+          .attr('orient', 'auto')
+          .append('path')
+          .attr('d', 'M0,-5L10,0L0,5')
+          .attr('fill', (d: any) => d)
+      );
   }
 }
