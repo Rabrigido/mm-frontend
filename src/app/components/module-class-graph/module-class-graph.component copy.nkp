@@ -4,33 +4,53 @@ import * as d3 from 'd3';
 import { GraphDataService, GraphNode, GraphLink, NodeType } from '../../services/graph-data.service';
 
 // --- CONSTANTS ---
-// D3 Zoom limits
+// const ZOOM_MIN = 0.1;
+// const ZOOM_MAX = 8;
+// const DEFAULT_WIDTH = 1000;
+// const DEFAULT_HEIGHT = 800;
+
+// // Simulation Physics
+// const FORCE_CHARGE_STRENGTH = -150;        // Repulsion between nodes
+// const FORCE_LINK_DISTANCE = 100;            // Desired distance between linked nodes
+// const FORCE_CENTER_STRENGTH = 0.06;        // Gravity toward center
+// const FORCE_COLLIDE_PADDING = 15;          // Collision detection padding
+// const FORCE_COLLIDE_ITERATIONS = 2;        // Collision detection passes
+// // Enclosures (Folders)
+// const ENCLOSURE_PADDING = 12;              // Minimal padding for cleaner look
+// const ENCLOSURE_PUSH_FORCE = 0.08;         // Gentle push (reduced from 0.2)
+// const ENCLOSURE_LEASH_FORCE = 0.08;        // Balanced leash force
+// const ENCLOSURE_FILL_OPACITY = 0.04;       // Very subtle fill
+// const ENCLOSURE_STROKE_OPACITY = 0.35;     // Subtle stroke
+
+
+
+// --- CONSTANTS ---
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 8;
-const DEFAULT_WIDTH = 1000;
+const DEFAULT_WIDTH = 2000;
 const DEFAULT_HEIGHT = 800;
 
-// Simulation Physics - Controls graph layout behavior
-const FORCE_CHARGE_STRENGTH = -300;        // Repulsion between nodes
-const FORCE_LINK_DISTANCE = 80;            // Desired distance between linked nodes
+// Simulation Physics
+const FORCE_CHARGE_STRENGTH = -150;        // Repulsion between nodes
+const FORCE_LINK_DISTANCE = 100;            // Desired distance between linked nodes
 const FORCE_CENTER_STRENGTH = 0.06;        // Gravity toward center
 const FORCE_COLLIDE_PADDING = 15;          // Collision detection padding
 const FORCE_COLLIDE_ITERATIONS = 2;        // Collision detection passes
-
-// Enclosures (Folder bubbles) - Optimized for better appearance
+// Enclosures (Folders)
 const ENCLOSURE_PADDING = 12;              // Minimal padding for cleaner look
-const ENCLOSURE_PUSH_FORCE = 0.08;         // Gentle push (reduced from 0.2)
+const ENCLOSURE_PUSH_FORCE = 0.1;         // Gentle push (reduced from 0.2)
 const ENCLOSURE_LEASH_FORCE = 0.08;        // Balanced leash force
 const ENCLOSURE_FILL_OPACITY = 0.04;       // Very subtle fill
 const ENCLOSURE_STROKE_OPACITY = 0.35;     // Subtle stroke
 
-// Link Visuals - Single color for all connections
+
+
+// Visuals - Single color for all links
 const ARROW_ID = 'arrowhead';
 const ARROW_COLOR = '#94a3b8';
 const LINK_COLOR = '#94a3b8';
 const LINK_OPACITY = 0.6;
 const NODE_STROKE_WIDTH = 2;
-
 
 interface RenderNode extends d3.SimulationNodeDatum {
   id: string;
@@ -45,12 +65,8 @@ interface RenderNode extends d3.SimulationNodeDatum {
 interface RenderLink extends d3.SimulationLinkDatum<RenderNode> {
   source: RenderNode;
   target: RenderNode;
-  value: number;           // Keep for simulation (can be 1 for force simulation)
-  fanIn?: number;          // NEW: Actual fan-in from metrics
-  fanOut?: number;         // NEW: Actual fan-out from metrics
-  couplingValue?: number;  // NEW: The real coupling intensity to use for thickness
+  value: number;
 }
-
 
 interface Enclosure {
   id: string;
@@ -62,13 +78,13 @@ interface Enclosure {
 }
 
 @Component({
-  selector: 'app-module-function-graph',
+  selector: 'app-module-class-graph',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './module-function-graph.component.html',
-  styleUrls: ['./module-function-graph.component.css']
+  templateUrl: './module-class-graph.component.html',
+  styleUrls: ['./module-class-graph.component.css']
 })
-export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
+export class ModuleClassGraphComponent implements OnInit, OnDestroy {
   private dataService = inject(GraphDataService);
 
   @Input({ required: true }) repoId!: string;
@@ -122,6 +138,12 @@ export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
         data.nodes.forEach(n => this.allNodesMap.set(n.id, n));
         this.allLinks = data.links;
 
+        // console.log(`links ${JSON.stringify(this.allLinks)}`)
+        // this.allLinks.forEach(link => {
+        //   console.log(`${link.source} -> ${link.target} (${link.type}, value: ${link.value})`);
+        // });
+
+
         // Initial State: Show only root nodes
         const rootNodes = data.nodes.filter(n => !n.parentId);
 
@@ -139,6 +161,7 @@ export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
   }
 
   private createRenderNode(n: GraphNode, x = 0, y = 0): RenderNode {
+
     return {
       id: n.id,
       label: n.label,
@@ -205,16 +228,18 @@ export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
         .attr('stroke', LINK_COLOR)
         .attr('stroke-opacity', LINK_OPACITY)
         .attr('stroke-width', (d: any) => {
-          // Map coupling value to visible range (e.g., 1px to 5px)
-          const maxCoupling = 20;  // Adjust based on your data
-          const thickness = Math.min(5, 1 + (d.couplingValue / maxCoupling) * 4);
-          return thickness;
-        })
+ 
+          Math.min(3.5, 1.5 + (d.value * 0.3))
+        }
+
+        )
         .attr('marker-end', `url(#${ARROW_ID})`)
         .attr('x1', (d: any) => d.source.x)
         .attr('y1', (d: any) => d.source.y)
         .attr('x2', (d: any) => this.shortenLine(d.source, d.target).x)
         .attr('y2', (d: any) => this.shortenLine(d.source, d.target).y);
+
+
 
       // Update Nodes
       const nodeSel = gNodes.selectAll('g.node')
@@ -262,42 +287,27 @@ export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
 
   // --- FORCES ---
 
-  /**
-   * Clusters nodes by their parent to keep siblings together.
-   * Works in conjunction with enclosure forces.
-   */
   private forceCluster() {
-    const strength = 0.15; // Slightly reduced for smoother clustering
+    const strength = 0.2;
     return (alpha: number) => {
       const groups = d3.group(this.nodes, d => d.parentId);
       groups.forEach((groupNodes) => {
         if (groupNodes.length <= 1) return;
 
-        // Calculate center of group
         let cx = 0, cy = 0;
-        groupNodes.forEach(n => {
-          cx += n.x!;
-          cy += n.y!;
-        });
+        groupNodes.forEach(n => { cx += n.x!; cy += n.y!; });
         cx /= groupNodes.length;
         cy /= groupNodes.length;
 
-        // Apply gentle centering force
         const k = strength * alpha;
         groupNodes.forEach(n => {
-          const dx = n.x! - cx;
-          const dy = n.y! - cy;
-          n.vx! -= dx * k;
-          n.vy! -= dy * k;
+          n.vx! -= (n.x! - cx) * k;
+          n.vy! -= (n.y! - cy) * k;
         });
       });
     };
   }
 
-  /**
-   * Applies forces to keep nodes within/outside their parent enclosures.
-   * Uses gentle forces to avoid erratic behavior.
-   */
   private forceEnclosure() {
     return (alpha: number) => {
       this.currentEnclosures = this.calculateEnclosures();
@@ -311,24 +321,22 @@ export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
           const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
 
           if (isInside) {
-            // LEASH FORCE: Gently keep children inside
+            // LEASH FORCE: Keep children inside
             const maxDist = enc.r - node.r - 5;
             if (dist > maxDist) {
               const k = ENCLOSURE_LEASH_FORCE * alpha;
-              const move = Math.max(0, dist - maxDist);
-              // Dampen the force to avoid oscillation
-              node.vx! -= (dx / dist) * move * k * 0.5;
-              node.vy! -= (dy / dist) * move * k * 0.5;
+              const move = dist - maxDist;
+              node.vx! -= (dx / dist) * move * k;
+              node.vy! -= (dy / dist) * move * k;
             }
           } else {
-            // PUSH FORCE: Gently push external nodes away
-            const minDist = enc.r + node.r + 5;
+            // PUSH FORCE: Keep outsiders out
+            const minDist = enc.r + node.r + 10;
             if (dist < minDist) {
               const overlap = minDist - dist;
-              // Reduced multiplier to prevent aggressive pushing
-              const k = ENCLOSURE_PUSH_FORCE * alpha;
-              node.vx! += (dx / dist) * overlap * k * 0.3;
-              node.vy! += (dy / dist) * overlap * k * 0.3;
+              const k = ENCLOSURE_PUSH_FORCE * alpha * 5;
+              node.vx! += (dx / dist) * overlap * k;
+              node.vy! += (dy / dist) * overlap * k;
             }
           }
         });
@@ -336,60 +344,31 @@ export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
     };
   }
 
-  /**
-   * Calculates enclosure circles for expanded parent nodes.
-   * Uses a more stable algorithm that avoids oversizing bubbles.
-   */
-  private calculateEnclosures(): Enclosure[] {
-    const enclosures: Enclosure[] = [];
-
-    this.expandedNodes.forEach(parentId => {
-      // Get direct children only (not all descendants)
-      const directChildren = this.nodes.filter(n => n.parentId === parentId);
-
-      if (directChildren.length === 0) return;
-
-      // Calculate bounding box instead of using pack algorithm
-      let minX = Infinity, maxX = -Infinity;
-      let minY = Infinity, maxY = -Infinity;
-
-      directChildren.forEach(child => {
-        const childX = child.x || 0;
-        const childY = child.y || 0;
-        const childR = child.r;
-
-        minX = Math.min(minX, childX - childR);
-        maxX = Math.max(maxX, childX + childR);
-        minY = Math.min(minY, childY - childR);
-        maxY = Math.max(maxY, childY + childR);
-      });
-
-      const width = maxX - minX;
-      const height = maxY - minY;
-      const centerX = (minX + maxX) / 2;
-      const centerY = (minY + maxY) / 2;
-
-      // Use ellipse that scales with content, not a fixed circle
-      const radius = Math.max(width, height) / 2 + ENCLOSURE_PADDING;
-
-      const pData = this.allNodesMap.get(parentId);
-
-      enclosures.push({
-        id: parentId,
-        x: centerX,
-        y: centerY,
-        r: Math.max(radius, 40), // Minimum size to be visible
-        label: pData?.label || '',
-        color: this.COLORS[pData?.type as NodeType] || '#ccc'
-      });
-    });
-
-    return enclosures;
-  }
-
   // --- HELPERS ---
 
+  private calculateEnclosures(): Enclosure[] {
+    const enclosures: Enclosure[] = [];
+    this.expandedNodes.forEach(parentId => {
+      // Include all visible descendants to ensure nested folders are wrapped
+      const descendants = this.nodes.filter(n => this.isDescendant(n.id, parentId));
 
+      if (descendants.length > 0) {
+        const pData = this.allNodesMap.get(parentId);
+        const circle = d3.packEnclose(descendants as any);
+        if (circle) {
+          enclosures.push({
+            id: parentId,
+            x: circle.x,
+            y: circle.y,
+            r: circle.r + ENCLOSURE_PADDING,
+            label: pData?.label || '',
+            color: this.COLORS[pData?.type as NodeType] || '#ccc'
+          });
+        }
+      }
+    });
+    return enclosures;
+  }
 
   private isDescendant(nodeId: string, ancestorId: string): boolean {
     let curr = this.allNodesMap.get(nodeId);
@@ -406,8 +385,12 @@ export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
     const newLinks = new Map<string, RenderLink>();
 
     const findVisible = (id: string): string | undefined => {
+      // console.log(`id: ${id}`);
       if (visibleNodeIds.has(id)) return id;
+
       let curr = this.allNodesMap.get(id);
+      // console.log(`curr: ${JSON.stringify(curr)}`);
+
       while (curr && curr.parentId) {
         if (visibleNodeIds.has(curr.parentId)) return curr.parentId;
         curr = this.allNodesMap.get(curr.parentId);
@@ -416,8 +399,12 @@ export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
     };
 
     this.allLinks.forEach(l => {
+
+      // console.log(`src: ${l.source} -> targetID: ${l.target}`);
+
       const sourceId = findVisible(l.source);
       const targetId = findVisible(l.target);
+
 
       if (sourceId && targetId && sourceId !== targetId) {
         const key = `${sourceId}-${targetId}`;
@@ -425,25 +412,26 @@ export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
           newLinks.set(key, {
             source: visibleNodeMap.get(sourceId)!,
             target: visibleNodeMap.get(targetId)!,
-            value: 1,  // Keep at 1 for force simulation
-            fanIn: l.fanIn,      // NEW: Use actual fan metrics
-            fanOut: l.fanOut,
-            couplingValue: l.fanIn ?? l.fanOut ?? l.value  // NEW: Real coupling value
+            value: 1
           });
         } else {
-          const existing = newLinks.get(key)!;
-          // Aggregate fan metrics intelligently
-          existing.fanIn = (existing.fanIn || 0) + (l.fanIn || 0);
-          existing.fanOut = (existing.fanOut || 0) + (l.fanOut || 0);
-          existing.couplingValue = existing.fanIn + existing.fanOut;
+          newLinks.get(key)!.value++;
         }
       }
+
+
     });
 
+
+
     this.links = Array.from(newLinks.values());
+
+
   }
+
   private handleNodeClick(event: MouseEvent, node: RenderNode) {
 
+    // console.log(JSON.stringify(node));
     const original = this.allNodesMap.get(node.id);
     if (!original || !original.children || original.children.length === 0) return;
 

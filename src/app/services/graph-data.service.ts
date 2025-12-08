@@ -16,12 +16,15 @@ export interface GraphNode {
   depth?: number;
 }
 
-export interface GraphLink {
+// 2. PRESERVE FAN METRICS IN SERVICE
+ export interface GraphLink {
   source: string;
   target: string;
   value: number;
   type: 'DEPENDENCY' | 'COUPLING' | 'CALL';
   direction?: 'fan-in' | 'fan-out';
+  fanIn?: number;          // NEW: Preserve actual counts
+  fanOut?: number;         // NEW: Preserve actual counts
 }
 
 export interface HierarchicalData {
@@ -552,56 +555,58 @@ export class GraphDataService {
     });
 
     return { nodes: Array.from(nodesMap.values()), links };
+
+
   }
 
-  private findFunctionNode(map: Map<string, GraphNode>, file: string, funcName: string): GraphNode | undefined {
-    // 1. Try exact ID match
-    let id = `${file}::${funcName}`;
-    if (map.has(id)) return map.get(id);
+  // private findFunctionNode(map: Map<string, GraphNode>, file: string, funcName: string): GraphNode | undefined {
+  //   // 1. Try exact ID match
+  //   let id = `${file}::${funcName}`;
+  //   if (map.has(id)) return map.get(id);
 
-    // 2. Try finding it as a child of the file (standalone)
-    const fileNode = map.get(file);
-    if (fileNode && fileNode.children) {
-      const child = fileNode.children.find(c => c.label === funcName && c.type === 'FUNCTION');
-      if (child) return child;
-    }
+  //   // 2. Try finding it as a child of the file (standalone)
+  //   const fileNode = map.get(file);
+  //   if (fileNode && fileNode.children) {
+  //     const child = fileNode.children.find(c => c.label === funcName && c.type === 'FUNCTION');
+  //     if (child) return child;
+  //   }
 
-    // 3. Try finding it as a method of a class in the file
-    // funcName might be "ClassName.methodName"
-    for (const node of map.values()) {
-      if (node.parentId === file || node.id.startsWith(file)) {
-        if (node.label === funcName) return node;
-        if (node.id.endsWith(`::${funcName}`)) return node;
-      }
-    }
-    return undefined;
-  }
+  //   // 3. Try finding it as a method of a class in the file
+  //   // funcName might be "ClassName.methodName"
+  //   for (const node of map.values()) {
+  //     if (node.parentId === file || node.id.startsWith(file)) {
+  //       if (node.label === funcName) return node;
+  //       if (node.id.endsWith(`::${funcName}`)) return node;
+  //     }
+  //   }
+  //   return undefined;
+  // }
 
-  private findFunctionNodeGlobal(map: Map<string, GraphNode>, funcName: string): GraphNode | undefined {
-    for (const node of map.values()) {
-      if (node.type === 'FUNCTION') {
-        // Exact label match
-        if (node.label === funcName) return node;
+  // private findFunctionNodeGlobal(map: Map<string, GraphNode>, funcName: string): GraphNode | undefined {
+  //   for (const node of map.values()) {
+  //     if (node.type === 'FUNCTION') {
+  //       // Exact label match
+  //       if (node.label === funcName) return node;
 
-        // ID suffix match (file::funcName)
-        if (node.id.endsWith(`::${funcName}`)) return node;
+  //       // ID suffix match (file::funcName)
+  //       if (node.id.endsWith(`::${funcName}`)) return node;
 
-        // Class.method match
-        const parts = node.id.split('::');
-        if (parts.length >= 3) {
-          const method = parts.pop();
-          const cls = parts.pop();
-          if (`${cls}.${method}` === funcName) return node;
-        }
-      }
-    }
-    return undefined;
-  }
+  //       // Class.method match
+  //       const parts = node.id.split('::');
+  //       if (parts.length >= 3) {
+  //         const method = parts.pop();
+  //         const cls = parts.pop();
+  //         if (`${cls}.${method}` === funcName) return node;
+  //       }
+  //     }
+  //   }
+  //   return undefined;
+  // }
 
-  private findClassId(map: Map<string, GraphNode>, shortName: string): string | undefined {
-    for (const node of map.values()) {
-      if (node.type === 'CLASS' && node.label === shortName) return node.id;
-    }
-    return undefined;
-  }
+  // private findClassId(map: Map<string, GraphNode>, shortName: string): string | undefined {
+  //   for (const node of map.values()) {
+  //     if (node.type === 'CLASS' && node.label === shortName) return node.id;
+  //   }
+  //   return undefined;
+  // }
 }

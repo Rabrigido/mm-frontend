@@ -43,7 +43,7 @@ const ENCLOSURE_LEASH_FORCE = 0.08;        // Balanced leash force
 const ENCLOSURE_FILL_OPACITY = 0.04;       // Very subtle fill
 const ENCLOSURE_STROKE_OPACITY = 0.35;     // Subtle stroke
 
- 
+
 
 // Visuals - Single color for all links
 const ARROW_ID = 'arrowhead';
@@ -65,8 +65,12 @@ interface RenderNode extends d3.SimulationNodeDatum {
 interface RenderLink extends d3.SimulationLinkDatum<RenderNode> {
   source: RenderNode;
   target: RenderNode;
-  value: number;
+  value: number;           // Keep for simulation (can be 1 for force simulation)
+  fanIn?: number;          // NEW: Actual fan-in from metrics
+  fanOut?: number;         // NEW: Actual fan-out from metrics
+  couplingValue?: number;  // NEW: The real coupling intensity to use for thickness
 }
+
 
 interface Enclosure {
   id: string;
@@ -86,20 +90,20 @@ interface Enclosure {
 })
 export class ModuleClassGraphComponent implements OnInit, OnDestroy {
   private dataService = inject(GraphDataService);
-  
+
   @Input({ required: true }) repoId!: string;
   @ViewChild('graphContainer', { static: true }) container!: ElementRef;
 
   loading = signal(true);
   error = signal<string | null>(null);
-  
+
   private allNodesMap = new Map<string, GraphNode>();
   private allLinks: GraphLink[] = [];
 
   private nodes: RenderNode[] = [];
   private links: RenderLink[] = [];
   private expandedNodes = new Set<string>();
-  
+
   private currentEnclosures: Enclosure[] = [];
 
   private simulation: any;
@@ -138,9 +142,15 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
         data.nodes.forEach(n => this.allNodesMap.set(n.id, n));
         this.allLinks = data.links;
 
+        // console.log(`links ${JSON.stringify(this.allLinks)}`)
+        // this.allLinks.forEach(link => {
+        //   console.log(`${link.source} -> ${link.target} (${link.type}, value: ${link.value})`);
+        // });
+
+
         // Initial State: Show only root nodes
         const rootNodes = data.nodes.filter(n => !n.parentId);
-        
+
         this.nodes = rootNodes.map(n => this.createRenderNode(n));
         this.updateLinks();
         this.initSimulation();
@@ -155,7 +165,7 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
   }
 
   private createRenderNode(n: GraphNode, x = 0, y = 0): RenderNode {
-    
+
     return {
       id: n.id,
       label: n.label,
@@ -179,7 +189,7 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
     this.svg = d3.select(el).append('svg')
       .attr('width', this.width)
       .attr('height', this.height)
-      .attr('viewBox', `${-this.width/2} ${-this.height/2} ${this.width} ${this.height}`);
+      .attr('viewBox', `${-this.width / 2} ${-this.height / 2} ${this.width} ${this.height}`);
 
     // Arrow Marker
     this.svg.append('defs').append('marker')
@@ -195,7 +205,7 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
       .attr('fill', ARROW_COLOR);
 
     const zoomLayer = this.svg.append('g').attr('class', 'zoom-layer');
-    
+
     this.svg.call(d3.zoom()
       .scaleExtent([ZOOM_MIN, ZOOM_MAX])
       .on('zoom', (e: any) => zoomLayer.attr('transform', e.transform))
@@ -221,29 +231,36 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
         .join('line')
         .attr('stroke', LINK_COLOR)
         .attr('stroke-opacity', LINK_OPACITY)
-        .attr('stroke-width', (d: any) => Math.min(3.5, 1.5 + (d.value * 0.3)))
+        .attr('stroke-width', (d: any) => {
+          // Map coupling value to visible range (e.g., 1px to 5px)
+          const maxCoupling = 20;  // Adjust based on your data
+          const thickness = Math.min(5, 1 + (d.couplingValue / maxCoupling) * 4);
+          return thickness;
+        })
         .attr('marker-end', `url(#${ARROW_ID})`)
         .attr('x1', (d: any) => d.source.x)
         .attr('y1', (d: any) => d.source.y)
         .attr('x2', (d: any) => this.shortenLine(d.source, d.target).x)
         .attr('y2', (d: any) => this.shortenLine(d.source, d.target).y);
 
+
+
       // Update Nodes
       const nodeSel = gNodes.selectAll('g.node')
         .data(this.nodes, (d: any) => d.id);
-      
+
       const nodeEnter = nodeSel.enter().append('g')
         .attr('class', 'node')
         .style('cursor', 'pointer')
         .call(d3.drag()
           .on('start', (e, d: any) => {
-             if (!e.active) this.simulation.alphaTarget(0.3).restart();
-             d.fx = d.x; d.fy = d.y;
+            if (!e.active) this.simulation.alphaTarget(0.3).restart();
+            d.fx = d.x; d.fy = d.y;
           })
           .on('drag', (e, d: any) => { d.fx = e.x; d.fy = e.y; })
           .on('end', (e, d: any) => {
-             if (!e.active) this.simulation.alphaTarget(0);
-             d.fx = null; d.fy = null;
+            if (!e.active) this.simulation.alphaTarget(0);
+            d.fx = null; d.fy = null;
           })
         )
         .on('click', (e: any, d: RenderNode) => this.handleNodeClick(e, d));
@@ -253,7 +270,7 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
         .attr('fill', (d: any) => d.color)
         .attr('stroke', '#fff')
         .attr('stroke-width', NODE_STROKE_WIDTH);
-      
+
       nodeEnter.append('text')
         .text((d: any) => d.label)
         .attr('dy', (d: any) => d.r + 14)
@@ -264,7 +281,7 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
 
       nodeSel.merge(nodeEnter as any)
         .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
-      
+
       nodeSel.exit().remove();
 
       // Draw Enclosures
@@ -280,12 +297,12 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
       const groups = d3.group(this.nodes, d => d.parentId);
       groups.forEach((groupNodes) => {
         if (groupNodes.length <= 1) return;
-        
+
         let cx = 0, cy = 0;
         groupNodes.forEach(n => { cx += n.x!; cy += n.y!; });
         cx /= groupNodes.length;
         cy /= groupNodes.length;
-        
+
         const k = strength * alpha;
         groupNodes.forEach(n => {
           n.vx! -= (n.x! - cx) * k;
@@ -295,6 +312,12 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
     };
   }
 
+  private getCouplingThickness(value: number, minThickness = 1, maxThickness = 5): number {
+    // Use logarithmic scale for better visual distribution
+    const logValue = Math.log(Math.max(1, value));
+    const maxLog = Math.log(20);  // Adjust based on your max expected coupling
+    return minThickness + ((logValue / maxLog) * (maxThickness - minThickness));
+  }
   private forceEnclosure() {
     return (alpha: number) => {
       this.currentEnclosures = this.calculateEnclosures();
@@ -302,7 +325,7 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
       this.currentEnclosures.forEach(enc => {
         this.nodes.forEach(node => {
           const isInside = this.isDescendant(node.id, enc.id);
-          
+
           const dx = node.x! - enc.x;
           const dy = node.y! - enc.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
@@ -311,10 +334,10 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
             // LEASH FORCE: Keep children inside
             const maxDist = enc.r - node.r - 5;
             if (dist > maxDist) {
-               const k = ENCLOSURE_LEASH_FORCE * alpha;
-               const move = dist - maxDist;
-               node.vx! -= (dx / dist) * move * k;
-               node.vy! -= (dy / dist) * move * k;
+              const k = ENCLOSURE_LEASH_FORCE * alpha;
+              const move = dist - maxDist;
+              node.vx! -= (dx / dist) * move * k;
+              node.vy! -= (dy / dist) * move * k;
             }
           } else {
             // PUSH FORCE: Keep outsiders out
@@ -338,7 +361,7 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
     this.expandedNodes.forEach(parentId => {
       // Include all visible descendants to ensure nested folders are wrapped
       const descendants = this.nodes.filter(n => this.isDescendant(n.id, parentId));
-      
+
       if (descendants.length > 0) {
         const pData = this.allNodesMap.get(parentId);
         const circle = d3.packEnclose(descendants as any);
@@ -391,10 +414,17 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
           newLinks.set(key, {
             source: visibleNodeMap.get(sourceId)!,
             target: visibleNodeMap.get(targetId)!,
-            value: 1
+            value: 1,  // Keep at 1 for force simulation
+            fanIn: l.fanIn,      // NEW: Use actual fan metrics
+            fanOut: l.fanOut,
+            couplingValue: l.fanIn ?? l.fanOut ?? l.value  // NEW: Real coupling value
           });
         } else {
-          newLinks.get(key)!.value++;
+          const existing = newLinks.get(key)!;
+          // Aggregate fan metrics intelligently
+          existing.fanIn = (existing.fanIn || 0) + (l.fanIn || 0);
+          existing.fanOut = (existing.fanOut || 0) + (l.fanOut || 0);
+          existing.couplingValue = existing.fanIn + existing.fanOut;
         }
       }
     });
@@ -404,35 +434,35 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
 
   private handleNodeClick(event: MouseEvent, node: RenderNode) {
 
-    console.log(JSON.stringify(node));
+    // console.log(JSON.stringify(node));
     const original = this.allNodesMap.get(node.id);
     if (!original || !original.children || original.children.length === 0) return;
-    
+
     // Expand
     this.expandedNodes.add(node.id);
     this.nodes = this.nodes.filter(n => n.id !== node.id);
-    
+
     const children = original.children.map(c => this.createRenderNode(c, node.x, node.y));
     this.nodes.push(...children);
-    
+
     this.updateSimulation();
   }
 
   private collapse(parentId: string) {
     this.expandedNodes.delete(parentId);
-    
+
     // Remove all descendants
     this.nodes = this.nodes.filter(n => !this.isDescendant(n.id, parentId));
-    
+
     // Restore parent
     const parentData = this.allNodesMap.get(parentId)!;
     // Try to place parent at center of where children were
     const enc = this.currentEnclosures.find(e => e.id === parentId);
     const x = enc ? enc.x : 0;
     const y = enc ? enc.y : 0;
-    
+
     this.nodes.push(this.createRenderNode(parentData, x, y));
-    
+
     this.updateSimulation();
   }
 
@@ -448,15 +478,15 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
     const dy = target.y - source.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist === 0) return { x: target.x, y: target.y };
-    
-    const gap = target.r + 8; 
+
+    const gap = target.r + 8;
     const t = 1 - gap / dist;
-    
+
     if (t < 0) return { x: target.x, y: target.y };
-    
-    return { 
-      x: source.x + dx * t, 
-      y: source.y + dy * t 
+
+    return {
+      x: source.x + dx * t,
+      y: source.y + dy * t
     };
   }
 
