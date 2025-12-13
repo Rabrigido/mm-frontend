@@ -47,7 +47,9 @@ export class GraphDataService {
       classes: req('classes-per-file'),
       classCoupling: req('class-coupling'),
       funcs: req('functions-per-file'),
-      funcCoupling: req('function-coupling')
+      funcCoupling: req('function-coupling'),
+      
+
     }).pipe(
       map(data => this.buildGraph(data))
     );
@@ -159,18 +161,29 @@ export class GraphDataService {
         const methods = details || [];
         if (Array.isArray(methods)) {
           methods.forEach((method: any) => {
-            const methodName = method.key?.name || 'unknown';
-            const methodId = `${classId}::${methodName}`;
+            let methodName = method.key?.name  || 'unknown';
+
+            // Normalize constructor name: backend uses _constructor internally
+            // AST gives us 'constructor' - store both mappings
+
+            const normalizedName = methodName === 'constructor' ? '_constructor' : methodName;
+            const methodId = `${classId}::${normalizedName}`;
 
             const methodNode: GraphNode = {
               id: methodId,
-              label: methodName,
+              label: methodName === '_constructor' ? 'constructor' : methodName, // display-friendly
               type: 'FUNCTION',
               parentId: classId,
               loc: 1,
               depth: (node.depth || 0) + 1
             };
             nodesMap.set(methodId, methodNode);
+
+            // map the alternate name for lookup compatibility
+
+            if(methodName ==='constructor'){ 
+              nodesMap.set(`${classId}::constructor`,methodNode); // Alias
+            }
             node.children?.push(methodNode);
 
             // Track method mappings for later link resolution
@@ -232,17 +245,25 @@ export class GraphDataService {
 
     // 4.0 METHOD-LEVEL COUPLING (from class-coupling metric method fan-in/fan-out)
     const methodLinks = new Map<string, { count: number; direction: 'fan-out' | 'fan-in' }>();
-
+    
     const classesForCoupling = data.classCoupling?.result || {};
+    
     Object.entries(classesForCoupling).forEach(([file, clsMap]: [string, any]) => {
+      
       Object.entries(clsMap).forEach(([className, methods]: [string, any]) => {
         if (!Array.isArray(methods)) return;
+        
+        const normalizeMethodName = (name:string ):string =>{
+          return name ==='constructor' ? '_constructor' : name;
+        }
 
         const classId = `${file}::${className}`;
         if (!nodesMap.has(classId)) return;
 
         methods.forEach((method: any) => {
-          const methodName = method.key?.name || 'unknown';
+          let methodName = method.key?.name || 'unknown';
+          methodName = normalizeMethodName(methodName);
+          
           const srcMethodId = `${classId}::${methodName}`;
           
           // Only create method links if the method node exists
@@ -259,7 +280,8 @@ export class GraphDataService {
 
             // Create method-level links for each target method
             Object.entries(targetMethods).forEach(([targetMethodName, count]: [string, any]) => {
-              const targetMethodId = `${targetClassId}::${targetMethodName}`;
+              const normalizedTargetName = normalizeMethodName(targetMethodName);
+              const targetMethodId = `${targetClassId}::${normalizedTargetName}`;
               
               // Only link to target method if it exists
               if (!nodesMap.has(targetMethodId) || srcMethodId === targetMethodId) return;
@@ -284,7 +306,8 @@ export class GraphDataService {
 
             // Create method-level links for each caller method
             Object.entries(callerMethods).forEach(([callerMethodName, count]: [string, any]) => {
-              const callerMethodId = `${callerClassId}::${callerMethodName}`;
+              const normalizedCallerName = normalizeMethodName(callerMethodName);
+              const callerMethodId = `${callerClassId}::${normalizeMethodName}`;
               
               // Only link from caller method if it exists
               if (!nodesMap.has(callerMethodId) || srcMethodId === callerMethodId) return;
@@ -558,54 +581,5 @@ export class GraphDataService {
 
   }
 
-  // private findFunctionNode(map: Map<string, GraphNode>, file: string, funcName: string): GraphNode | undefined {
-  //   // 1. Try exact ID match
-  //   let id = `${file}::${funcName}`;
-  //   if (map.has(id)) return map.get(id);
-
-  //   // 2. Try finding it as a child of the file (standalone)
-  //   const fileNode = map.get(file);
-  //   if (fileNode && fileNode.children) {
-  //     const child = fileNode.children.find(c => c.label === funcName && c.type === 'FUNCTION');
-  //     if (child) return child;
-  //   }
-
-  //   // 3. Try finding it as a method of a class in the file
-  //   // funcName might be "ClassName.methodName"
-  //   for (const node of map.values()) {
-  //     if (node.parentId === file || node.id.startsWith(file)) {
-  //       if (node.label === funcName) return node;
-  //       if (node.id.endsWith(`::${funcName}`)) return node;
-  //     }
-  //   }
-  //   return undefined;
-  // }
-
-  // private findFunctionNodeGlobal(map: Map<string, GraphNode>, funcName: string): GraphNode | undefined {
-  //   for (const node of map.values()) {
-  //     if (node.type === 'FUNCTION') {
-  //       // Exact label match
-  //       if (node.label === funcName) return node;
-
-  //       // ID suffix match (file::funcName)
-  //       if (node.id.endsWith(`::${funcName}`)) return node;
-
-  //       // Class.method match
-  //       const parts = node.id.split('::');
-  //       if (parts.length >= 3) {
-  //         const method = parts.pop();
-  //         const cls = parts.pop();
-  //         if (`${cls}.${method}` === funcName) return node;
-  //       }
-  //     }
-  //   }
-  //   return undefined;
-  // }
-
-  // private findClassId(map: Map<string, GraphNode>, shortName: string): string | undefined {
-  //   for (const node of map.values()) {
-  //     if (node.type === 'CLASS' && node.label === shortName) return node.id;
-  //   }
-  //   return undefined;
-  // }
+ 
 }
