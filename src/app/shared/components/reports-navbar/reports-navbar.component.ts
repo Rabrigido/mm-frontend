@@ -2,16 +2,6 @@ import { Component, EventEmitter, Input, Output, signal, OnChanges, SimpleChange
 import { NgFor, NgClass } from '@angular/common';
 
 export type ReportKey =
-  | 'loc-sloc'
-  | 'cyclomatic-complexity'
-  | 'dependencies'
-  | 'architecture'
-  | 'duplication'
-  | 'files'
-  | 'functions-per-file'
-  | 'classes-per-file'
-  | 'function-coupling'
-  | 'class-coupling'
   | 'hierarchical-graph'
   | 'module-class-graph'
   | 'module-function-graph'; 
@@ -30,19 +20,11 @@ export interface ReportItem {
 })
 export class ReportsNavbarComponent implements OnChanges {
   @Input() items: ReportItem[] = [
-    // { key: 'loc-sloc', label: 'LOC / SLOC' },
-    // { key: 'cyclomatic-complexity', label: 'Complexity' },
+  
     { key: 'hierarchical-graph', label: 'Project summary' },  
     { key: 'module-class-graph', label: 'Module-class' },  
     { key: 'module-function-graph', label: 'Module-function' },  
-    // { key: 'dependencies', label: 'Dependency graph' },
-    // { key: 'architecture', label: 'Architecture' },
-    // { key: 'duplication', label: 'Duplication' },
-    // { key: 'files', label: 'Archivos' },
-    // { key: 'functions-per-file', label: 'Functions' },
-    // { key: 'classes-per-file', label: 'Classes' },
-    // { key: 'function-coupling', label: 'Func Coupling' },
-    // { key: 'class-coupling', label: 'Class Coupling' },
+ 
   ];
 
   @Input() selected: ReportKey | null = null;

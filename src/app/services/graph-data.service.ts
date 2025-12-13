@@ -44,8 +44,6 @@ export class GraphDataService {
 
     return forkJoin({
       files: req('files'),
-      loc: this.metrics.getLocSloc(repoId).pipe(catchError(() => of({ byFile: {} }))),
-      dependencies: this.metrics.getDependencies(repoId).pipe(catchError(() => of({ graph: {} }))),
       classes: req('classes-per-file'),
       classCoupling: req('class-coupling'),
       funcs: req('functions-per-file'),
@@ -56,8 +54,8 @@ export class GraphDataService {
   }
 
   private buildGraph(data: any): HierarchicalData {
-    const nodesMap = new Map<string, GraphNode>();
-    const links: GraphLink[] = [];
+    const nodesMap = new Map<string, GraphNode>();  // (id, node)
+    const links: GraphLink[] = []; 
 
     // --- 1. DIRECTORIES & FILES ---
     let filePaths: string[] = [];
@@ -66,6 +64,7 @@ export class GraphDataService {
     else filePaths = Object.keys(data.dependencies?.graph || {});
 
     filePaths.forEach(path => {
+      
       const parts = path.split('/');
       const fileName = parts.pop()!;
 

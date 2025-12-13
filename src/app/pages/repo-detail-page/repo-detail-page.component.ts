@@ -4,19 +4,13 @@ import { CommonModule } from '@angular/common';
 import { ReposService } from '../../services/repos.service';
 import { Repo } from '../../models/repo';
 import { ScanResult } from '../../models/scan-result';
-import { LocSlocComponent } from '../../components/loc-sloc/loc-sloc.component';
+ 
 import * as echarts from 'echarts';
 import { ReportsNavbarComponent, ReportKey } from '../../shared/components/reports-navbar/reports-navbar.component';
 import { Input } from '@angular/core';
 import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { Observable } from 'rxjs';
-import { FilesMetricComponent } from '../../components/files-metric/files-metric.component';
-import { CyclomaticMetricComponent } from '../../components/cyclomatic-metric/cyclomatic-metric.component';
-import { FunctionsPerFileComponent } from '../../components/functions-per-file/functions-per-file.component';
-import { ClassesPerFileComponent } from '../../components/classes-per-file/classes-per-file.component';
-import { FunctionCouplingComponent } from '../../components/function-coupling/function-coupling.component';
-import { ClassCouplingComponent } from '../../components/class-coupling/class-coupling.component';
-import { DependenciesD3Component } from '../../components/dependencies/dependencies-d3.component';
+ 
 import { HierarchicalGraphComponent } from '../../components/hierarchical-graph/hierarchical-graph.component';
 import { ModuleClassGraphComponent } from '../../components/module-class-graph/module-class-graph.component';
 import { ModuleFunctionGraphComponent } from '../../components/module-function-graph/module-function-graph.component';
@@ -29,17 +23,11 @@ type FilesMode = 'byExtension' | 'byFolder' | 'treemap' | 'depth';
   imports: [
     CommonModule,
     RouterLink,
-    FilesMetricComponent,
-    LocSlocComponent,
+
     ReportsNavbarComponent,
-    CyclomaticMetricComponent,
-    FunctionsPerFileComponent,
-    ClassesPerFileComponent,
-    FunctionCouplingComponent,
-    ClassCouplingComponent,
-    DependenciesD3Component,
-    HierarchicalGraphComponent, // <--- Added
-    ModuleClassGraphComponent,    // NEW
+ 
+    HierarchicalGraphComponent, 
+    ModuleClassGraphComponent,    
     ModuleFunctionGraphComponent
 
   ],
