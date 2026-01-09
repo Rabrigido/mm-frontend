@@ -71,20 +71,20 @@ interface Enclosure {
 })
 export class HierarchicalGraphComponent implements OnInit, OnDestroy {
   private dataService = inject(GraphDataService);
-  
+
   @Input({ required: true }) repoId!: string;
   @ViewChild('graphContainer', { static: true }) container!: ElementRef;
 
   loading = signal(true);
   error = signal<string | null>(null);
-  
+
   private allNodesMap = new Map<string, GraphNode>();
   private allLinks: GraphLink[] = [];
 
   private nodes: RenderNode[] = [];
   private links: RenderLink[] = [];
   private expandedNodes = new Set<string>();
-  
+
   private currentEnclosures: Enclosure[] = [];
 
   private simulation: any;
@@ -125,7 +125,7 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
 
         // Initial State: Show only root nodes
         const rootNodes = data.nodes.filter(n => !n.parentId);
-        
+
         this.nodes = rootNodes.map(n => this.createRenderNode(n));
         this.updateLinks();
         this.initSimulation();
@@ -163,13 +163,13 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
     this.svg = d3.select(el).append('svg')
       .attr('width', this.width)
       .attr('height', this.height)
-      .attr('viewBox', `${-this.width/2} ${-this.height/2} ${this.width} ${this.height}`);
+      .attr('viewBox', `${-this.width / 2} ${-this.height / 2} ${this.width} ${this.height}`);
 
     // Arrow Marker (placeholder - will be updated dynamically)
     this.svg.append('defs');
 
     const zoomLayer = this.svg.append('g').attr('class', 'zoom-layer');
-    
+
     this.svg.call(d3.zoom()
       .scaleExtent([ZOOM_MIN, ZOOM_MAX])
       .on('zoom', (e: any) => zoomLayer.attr('transform', e.transform))
@@ -190,7 +190,7 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
 
     this.simulation.on('tick', () => {
       this.updateArrowMarkers();
-      
+
       // Update Links
       gLinks.selectAll('line')
         .data(this.links)
@@ -210,19 +210,19 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
       // Update Nodes
       const nodeSel = gNodes.selectAll('g.node')
         .data(this.nodes, (d: any) => d.id);
-      
+
       const nodeEnter = nodeSel.enter().append('g')
         .attr('class', 'node')
         .style('cursor', 'pointer')
         .call(d3.drag()
           .on('start', (e, d: any) => {
-             if (!e.active) this.simulation.alphaTarget(0.3).restart();
-             d.fx = d.x; d.fy = d.y;
+            if (!e.active) this.simulation.alphaTarget(0.3).restart();
+            d.fx = d.x; d.fy = d.y;
           })
           .on('drag', (e, d: any) => { d.fx = e.x; d.fy = e.y; })
           .on('end', (e, d: any) => {
-             if (!e.active) this.simulation.alphaTarget(0);
-             d.fx = null; d.fy = null;
+            if (!e.active) this.simulation.alphaTarget(0);
+            d.fx = null; d.fy = null;
           })
         )
         .on('click', (e: any, d: RenderNode) => this.handleNodeClick(e, d));
@@ -232,7 +232,7 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
         .attr('fill', (d: any) => d.color)
         .attr('stroke', '#fff')
         .attr('stroke-width', NODE_STROKE_WIDTH);
-      
+
       nodeEnter.append('text')
         .text((d: any) => d.label)
         .attr('dy', (d: any) => d.r + 14)
@@ -243,7 +243,7 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
 
       nodeSel.merge(nodeEnter as any)
         .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
-      
+
       nodeSel.exit().remove();
 
       // Draw Enclosures
@@ -259,12 +259,12 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
       const groups = d3.group(this.nodes, d => d.parentId);
       groups.forEach((groupNodes) => {
         if (groupNodes.length <= 1) return;
-        
+
         let cx = 0, cy = 0;
         groupNodes.forEach(n => { cx += n.x!; cy += n.y!; });
         cx /= groupNodes.length;
         cy /= groupNodes.length;
-        
+
         const k = strength * alpha;
         groupNodes.forEach(n => {
           n.vx! -= (n.x! - cx) * k;
@@ -281,7 +281,7 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
       this.currentEnclosures.forEach(enc => {
         this.nodes.forEach(node => {
           const isInside = this.isDescendant(node.id, enc.id);
-          
+
           const dx = node.x! - enc.x;
           const dy = node.y! - enc.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
@@ -290,10 +290,10 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
             // LEASH FORCE: Keep children inside
             const maxDist = enc.r - node.r - 5;
             if (dist > maxDist) {
-               const k = ENCLOSURE_LEASH_FORCE * alpha;
-               const move = dist - maxDist;
-               node.vx! -= (dx / dist) * move * k;
-               node.vy! -= (dy / dist) * move * k;
+              const k = ENCLOSURE_LEASH_FORCE * alpha;
+              const move = dist - maxDist;
+              node.vx! -= (dx / dist) * move * k;
+              node.vy! -= (dy / dist) * move * k;
             }
           } else {
             // PUSH FORCE: Keep outsiders out
@@ -315,11 +315,12 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
   private calculateEnclosures(): Enclosure[] {
     const enclosures: Enclosure[] = [];
     this.expandedNodes.forEach(parentId => {
-      const descendants = this.nodes.filter(n => this.isDescendant(n.id, parentId));
-      
-      if (descendants.length > 0) {
+      // Only include DIRECT children (parentId matches), not all descendants
+      const directChildren = this.nodes.filter(n => n.parentId === parentId);
+
+      if (directChildren.length > 0) {
         const pData = this.allNodesMap.get(parentId);
-        const circle = d3.packEnclose(descendants as any);
+        const circle = d3.packEnclose(directChildren as any);
         if (circle) {
           enclosures.push({
             id: parentId,
@@ -383,31 +384,31 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
   private handleNodeClick(event: MouseEvent, node: RenderNode) {
     const original = this.allNodesMap.get(node.id);
     if (!original || !original.children || original.children.length === 0) return;
-    
+
     // Expand
     this.expandedNodes.add(node.id);
     this.nodes = this.nodes.filter(n => n.id !== node.id);
-    
+
     const children = original.children.map(c => this.createRenderNode(c, node.x, node.y));
     this.nodes.push(...children);
-    
+
     this.updateSimulation();
   }
 
   private collapse(parentId: string) {
     this.expandedNodes.delete(parentId);
-    
+
     // Remove all descendants
     this.nodes = this.nodes.filter(n => !this.isDescendant(n.id, parentId));
-    
+
     // Restore parent
     const parentData = this.allNodesMap.get(parentId)!;
     const enc = this.currentEnclosures.find(e => e.id === parentId);
     const x = enc ? enc.x : 0;
     const y = enc ? enc.y : 0;
-    
+
     this.nodes.push(this.createRenderNode(parentData, x, y));
-    
+
     this.updateSimulation();
   }
 
@@ -423,15 +424,15 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
     const dy = target.y - source.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist === 0) return { x: target.x, y: target.y };
-    
-    const gap = target.r + 8; 
+
+    const gap = target.r + 8;
     const t = 1 - gap / dist;
-    
+
     if (t < 0) return { x: target.x, y: target.y };
-    
-    return { 
-      x: source.x + dx * t, 
-      y: source.y + dy * t 
+
+    return {
+      x: source.x + dx * t,
+      y: source.y + dy * t
     };
   }
 
@@ -479,13 +480,13 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
    */
   private getLinkColor(value: number): string {
     const normalized = Math.min(value / 10, 1);
-    
+
     if (normalized < 0.5) {
       const t = normalized * 2;
       return this.blendColors(LINK_COLOR_MID, LINK_COLOR_MID, t);
     } else {
       const t = (normalized - 0.5) * 2;
-      return this.blendColors(LINK_COLOR_MID,LINK_COLOR_MID, t);
+      return this.blendColors(LINK_COLOR_MID, LINK_COLOR_MID, t);
     }
   }
 
@@ -496,19 +497,19 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
   private blendColors(colorA: string, colorB: string, factor: number): string {
     const c1 = parseInt(colorA.slice(1), 16);
     const c2 = parseInt(colorB.slice(1), 16);
-    
+
     const r1 = (c1 >> 16) & 255;
     const g1 = (c1 >> 8) & 255;
     const b1 = c1 & 255;
-    
+
     const r2 = (c2 >> 16) & 255;
     const g2 = (c2 >> 8) & 255;
     const b2 = c2 & 255;
-    
+
     const r = Math.round(r1 + (r2 - r1) * factor);
     const g = Math.round(g1 + (g2 - g1) * factor);
     const b = Math.round(b1 + (b2 - b1) * factor);
-    
+
     return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
   }
 
@@ -520,7 +521,7 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
     if (!this.links || this.links.length === 0) return;
 
     const uniqueColors = new Set(this.links.map(l => this.getLinkColor(l.value)));
-    
+
     d3.select(this.svg.node().querySelector('defs'))
       .selectAll('marker')
       .data(Array.from(uniqueColors), (d: any) => d)
@@ -537,5 +538,103 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
           .attr('d', 'M0,-5L10,0L0,5')
           .attr('fill', (d: any) => d)
       );
+  }
+
+  /**
+* Expands all nodes gradually with delays to prevent explosion.
+* Allows simulation to settle between each expansion level.
+*/
+  expandAll() {
+    const nodesToExpand: string[] = [];
+
+    // Collect all nodes that have children
+    this.allNodesMap.forEach((node) => {
+      if (node.children && node.children.length > 0) {
+        nodesToExpand.push(node.id);
+      }
+    });
+
+    // Expand nodes in batches with delay to let simulation settle
+    let delay = 0;
+    const batchSize = 5; // Expand 5 nodes at a time
+
+    for (let i = 0; i < nodesToExpand.length; i += batchSize) {
+      const batch = nodesToExpand.slice(i, i + batchSize);
+
+      setTimeout(() => {
+        batch.forEach(nodeId => {
+          const nodeData = this.allNodesMap.get(nodeId);
+          if (!nodeData) return;
+
+          // Only expand if not already expanded
+          if (!this.expandedNodes.has(nodeId)) {
+            this.expandedNodes.add(nodeId);
+
+            // Find and remove the parent node if it exists in render nodes
+            const parentIndex = this.nodes.findIndex(n => n.id === nodeId);
+            if (parentIndex !== -1) {
+              const parentNode = this.nodes[parentIndex];
+              this.nodes.splice(parentIndex, 1);
+
+              // Add children near where the parent was
+              if (nodeData.children) {
+                const children = nodeData.children.map(c =>
+                  this.createRenderNode(c, parentNode.x || 0, parentNode.y || 0)
+                );
+                this.nodes.push(...children);
+              }
+            }
+          }
+        });
+
+        // Update simulation after each batch
+        this.updateSimulation();
+      }, delay);
+
+      delay += 500; // 500ms between batches
+    }
+  }
+
+  /**
+   * Collapses all nodes back to root level gradually.
+   */
+  collapseAll() {
+    // Get all expanded nodes sorted by depth (deepest first)
+    const toCollapse = Array.from(this.expandedNodes).sort((a, b) => {
+      const depthA = this.getNodeDepth(a);
+      const depthB = this.getNodeDepth(b);
+      return depthB - depthA; // Deepest first
+    });
+
+    // Collapse nodes in batches with delay
+    let delay = 0;
+    const batchSize = 5;
+
+    for (let i = 0; i < toCollapse.length; i += batchSize) {
+      const batch = toCollapse.slice(i, i + batchSize);
+
+      setTimeout(() => {
+        batch.forEach(nodeId => {
+          if (this.expandedNodes.has(nodeId)) {
+            this.collapse(nodeId);
+          }
+        });
+      }, delay);
+
+      delay += 300;
+    }
+  }
+
+  /**
+   * Helper: Calculate the depth of a node in the tree.
+   */
+  private getNodeDepth(nodeId: string): number {
+    let depth = 0;
+    let curr = this.allNodesMap.get(nodeId);
+    while (curr && curr.parentId) {
+      depth++;
+      curr = this.allNodesMap.get(curr.parentId);
+    }
+    return depth;
   }
 }

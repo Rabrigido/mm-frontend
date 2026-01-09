@@ -341,51 +341,28 @@ export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
    * Uses a more stable algorithm that avoids oversizing bubbles.
    */
   private calculateEnclosures(): Enclosure[] {
-    const enclosures: Enclosure[] = [];
-
-    this.expandedNodes.forEach(parentId => {
-      // Get direct children only (not all descendants)
-      const directChildren = this.nodes.filter(n => n.parentId === parentId);
-
-      if (directChildren.length === 0) return;
-
-      // Calculate bounding box instead of using pack algorithm
-      let minX = Infinity, maxX = -Infinity;
-      let minY = Infinity, maxY = -Infinity;
-
-      directChildren.forEach(child => {
-        const childX = child.x || 0;
-        const childY = child.y || 0;
-        const childR = child.r;
-
-        minX = Math.min(minX, childX - childR);
-        maxX = Math.max(maxX, childX + childR);
-        minY = Math.min(minY, childY - childR);
-        maxY = Math.max(maxY, childY + childR);
+      const enclosures: Enclosure[] = [];
+      this.expandedNodes.forEach(parentId => {
+        // Only include DIRECT children (parentId matches), not all descendants
+        const directChildren = this.nodes.filter(n => n.parentId === parentId);
+  
+        if (directChildren.length > 0) {
+          const pData = this.allNodesMap.get(parentId);
+          const circle = d3.packEnclose(directChildren as any);
+          if (circle) {
+            enclosures.push({
+              id: parentId,
+              x: circle.x,
+              y: circle.y,
+              r: circle.r + ENCLOSURE_PADDING,
+              label: pData?.label || '',
+              color: this.COLORS[pData?.type as NodeType] || '#ccc'
+            });
+          }
+        }
       });
-
-      const width = maxX - minX;
-      const height = maxY - minY;
-      const centerX = (minX + maxX) / 2;
-      const centerY = (minY + maxY) / 2;
-
-      // Use ellipse that scales with content, not a fixed circle
-      const radius = Math.max(width, height) / 2 + ENCLOSURE_PADDING;
-
-      const pData = this.allNodesMap.get(parentId);
-
-      enclosures.push({
-        id: parentId,
-        x: centerX,
-        y: centerY,
-        r: Math.max(radius, 40), // Minimum size to be visible
-        label: pData?.label || '',
-        color: this.COLORS[pData?.type as NodeType] || '#ccc'
-      });
-    });
-
-    return enclosures;
-  }
+      return enclosures;
+    }
 
   // --- HELPERS ---
 
@@ -535,5 +512,103 @@ export class ModuleFunctionGraphComponent implements OnInit, OnDestroy {
       .attr('y', (d: any) => d.y - d.r - 8);
 
     sel.exit().remove();
+  }
+
+    /**
+* Expands all nodes gradually with delays to prevent explosion.
+* Allows simulation to settle between each expansion level.
+*/
+  expandAll() {
+    const nodesToExpand: string[] = [];
+
+    // Collect all nodes that have children
+    this.allNodesMap.forEach((node) => {
+      if (node.children && node.children.length > 0) {
+        nodesToExpand.push(node.id);
+      }
+    });
+
+    // Expand nodes in batches with delay to let simulation settle
+    let delay = 0;
+    const batchSize = 5; // Expand 5 nodes at a time
+
+    for (let i = 0; i < nodesToExpand.length; i += batchSize) {
+      const batch = nodesToExpand.slice(i, i + batchSize);
+
+      setTimeout(() => {
+        batch.forEach(nodeId => {
+          const nodeData = this.allNodesMap.get(nodeId);
+          if (!nodeData) return;
+
+          // Only expand if not already expanded
+          if (!this.expandedNodes.has(nodeId)) {
+            this.expandedNodes.add(nodeId);
+
+            // Find and remove the parent node if it exists in render nodes
+            const parentIndex = this.nodes.findIndex(n => n.id === nodeId);
+            if (parentIndex !== -1) {
+              const parentNode = this.nodes[parentIndex];
+              this.nodes.splice(parentIndex, 1);
+
+              // Add children near where the parent was
+              if (nodeData.children) {
+                const children = nodeData.children.map(c =>
+                  this.createRenderNode(c, parentNode.x || 0, parentNode.y || 0)
+                );
+                this.nodes.push(...children);
+              }
+            }
+          }
+        });
+
+        // Update simulation after each batch
+        this.updateSimulation();
+      }, delay);
+
+      delay += 500; // 500ms between batches
+    }
+  }
+
+  /**
+   * Collapses all nodes back to root level gradually.
+   */
+  collapseAll() {
+    // Get all expanded nodes sorted by depth (deepest first)
+    const toCollapse = Array.from(this.expandedNodes).sort((a, b) => {
+      const depthA = this.getNodeDepth(a);
+      const depthB = this.getNodeDepth(b);
+      return depthB - depthA; // Deepest first
+    });
+
+    // Collapse nodes in batches with delay
+    let delay = 0;
+    const batchSize = 5;
+
+    for (let i = 0; i < toCollapse.length; i += batchSize) {
+      const batch = toCollapse.slice(i, i + batchSize);
+
+      setTimeout(() => {
+        batch.forEach(nodeId => {
+          if (this.expandedNodes.has(nodeId)) {
+            this.collapse(nodeId);
+          }
+        });
+      }, delay);
+
+      delay += 300;
+    }
+  }
+
+  /**
+   * Helper: Calculate the depth of a node in the tree.
+   */
+  private getNodeDepth(nodeId: string): number {
+    let depth = 0;
+    let curr = this.allNodesMap.get(nodeId);
+    while (curr && curr.parentId) {
+      depth++;
+      curr = this.allNodesMap.get(curr.parentId);
+    }
+    return depth;
   }
 }

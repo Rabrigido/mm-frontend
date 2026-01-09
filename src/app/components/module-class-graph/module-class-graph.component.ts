@@ -38,7 +38,7 @@ const FORCE_COLLIDE_PADDING = 15;          // Collision detection padding
 const FORCE_COLLIDE_ITERATIONS = 2;        // Collision detection passes
 // Enclosures (Folders)
 const ENCLOSURE_PADDING = 12;              // Minimal padding for cleaner look
-const ENCLOSURE_PUSH_FORCE = 0.1;         // Gentle push (reduced from 0.2)
+const ENCLOSURE_PUSH_FORCE = 0.03;         // Gentle push (reduced from 0.2)
 const ENCLOSURE_LEASH_FORCE = 0.08;        // Balanced leash force
 const ENCLOSURE_FILL_OPACITY = 0.04;       // Very subtle fill
 const ENCLOSURE_STROKE_OPACITY = 0.35;     // Subtle stroke
@@ -134,6 +134,30 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.simulation) this.simulation.stop();
   }
+    // Enclosure control signals
+
+
+  // Update handlers
+  updateEnclosurePadding(event: Event) {
+    const value = parseInt((event.target as HTMLInputElement).value);
+   
+  }
+
+  // updateEnclosureLeashForce(event: Event) {
+  //   const value = parseFloat((event.target as HTMLInputElement).value);
+  //   this.enclosureLeashForce.set(value);
+  // }
+
+  // updateEnclosurePushForce(event: Event) {
+  //   const value = parseFloat((event.target as HTMLInputElement).value);
+  //   this.enclosurePushForce.set(value);
+  // }
+
+  // resetEnclosureSettings() {
+  //   this.enclosurePadding.set(12);
+  //   this.enclosureLeashForce.set(0.08);
+  //   this.enclosurePushForce.set(0.1);
+  // }
 
   private loadGraph() {
     this.loading.set(true);
@@ -344,13 +368,17 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
             const minDist = enc.r + node.r + 10;
             if (dist < minDist) {
               const overlap = minDist - dist;
-              const k = ENCLOSURE_PUSH_FORCE * alpha * 5;
+              const k = ENCLOSURE_PUSH_FORCE* alpha * 5;
               node.vx! += (dx / dist) * overlap * k;
               node.vy! += (dy / dist) * overlap * k;
             }
           }
         });
+
+
       });
+
+      
     };
   }
 
@@ -526,5 +554,102 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
       .attr('y', (d: any) => d.y - d.r - 8);
 
     sel.exit().remove();
+  }
+      /**
+* Expands all nodes gradually with delays to prevent explosion.
+* Allows simulation to settle between each expansion level.
+*/
+  expandAll() {
+    const nodesToExpand: string[] = [];
+
+    // Collect all nodes that have children
+    this.allNodesMap.forEach((node) => {
+      if (node.children && node.children.length > 0) {
+        nodesToExpand.push(node.id);
+      }
+    });
+
+    // Expand nodes in batches with delay to let simulation settle
+    let delay = 0;
+    const batchSize = 5; // Expand 5 nodes at a time
+
+    for (let i = 0; i < nodesToExpand.length; i += batchSize) {
+      const batch = nodesToExpand.slice(i, i + batchSize);
+
+      setTimeout(() => {
+        batch.forEach(nodeId => {
+          const nodeData = this.allNodesMap.get(nodeId);
+          if (!nodeData) return;
+
+          // Only expand if not already expanded
+          if (!this.expandedNodes.has(nodeId)) {
+            this.expandedNodes.add(nodeId);
+
+            // Find and remove the parent node if it exists in render nodes
+            const parentIndex = this.nodes.findIndex(n => n.id === nodeId);
+            if (parentIndex !== -1) {
+              const parentNode = this.nodes[parentIndex];
+              this.nodes.splice(parentIndex, 1);
+
+              // Add children near where the parent was
+              if (nodeData.children) {
+                const children = nodeData.children.map(c =>
+                  this.createRenderNode(c, parentNode.x || 0, parentNode.y || 0)
+                );
+                this.nodes.push(...children);
+              }
+            }
+          }
+        });
+
+        // Update simulation after each batch
+        this.updateSimulation();
+      }, delay);
+
+      delay += 500; // 500ms between batches
+    }
+  }
+
+  /**
+   * Collapses all nodes back to root level gradually.
+   */
+  collapseAll() {
+    // Get all expanded nodes sorted by depth (deepest first)
+    const toCollapse = Array.from(this.expandedNodes).sort((a, b) => {
+      const depthA = this.getNodeDepth(a);
+      const depthB = this.getNodeDepth(b);
+      return depthB - depthA; // Deepest first
+    });
+
+    // Collapse nodes in batches with delay
+    let delay = 0;
+    const batchSize = 5;
+
+    for (let i = 0; i < toCollapse.length; i += batchSize) {
+      const batch = toCollapse.slice(i, i + batchSize);
+
+      setTimeout(() => {
+        batch.forEach(nodeId => {
+          if (this.expandedNodes.has(nodeId)) {
+            this.collapse(nodeId);
+          }
+        });
+      }, delay);
+
+      delay += 300;
+    }
+  }
+
+  /**
+   * Helper: Calculate the depth of a node in the tree.
+   */
+  private getNodeDepth(nodeId: string): number {
+    let depth = 0;
+    let curr = this.allNodesMap.get(nodeId);
+    while (curr && curr.parentId) {
+      depth++;
+      curr = this.allNodesMap.get(curr.parentId);
+    }
+    return depth;
   }
 }
