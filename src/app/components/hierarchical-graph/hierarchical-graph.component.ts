@@ -2,6 +2,7 @@ import { Component, ElementRef, Input, OnInit, OnDestroy, ViewChild, inject, sig
 import { CommonModule } from '@angular/common';
 import * as d3 from 'd3';
 import { GraphDataService, GraphNode, GraphLink, NodeType } from '../../services/graph-data.service';
+import { downloadSvg, downloadPng } from '../common/component.utils';
 
 // --- CONSTANTS ---
 const ZOOM_MIN = 0.1;
@@ -636,5 +637,13 @@ export class HierarchicalGraphComponent implements OnInit, OnDestroy {
       curr = this.allNodesMap.get(curr.parentId);
     }
     return depth;
+  }
+
+  downloadSVG(): void {
+    downloadSvg(this.container.nativeElement, 'dependency-graph.svg');
+  }
+
+  downloadPNG(): void {
+    downloadPng(this.container.nativeElement, this.width, this.height, 'dependency-graph.png');
   }
 }
