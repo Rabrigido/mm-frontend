@@ -97,6 +97,7 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
 
   loading = signal(true);
   error = signal<string | null>(null);
+  separation = signal(1);
 
   private allNodesMap = new Map<string, GraphNode>();
   private allLinks: GraphLink[] = [];
@@ -652,6 +653,21 @@ export class ModuleClassGraphComponent implements OnInit, OnDestroy {
       curr = this.allNodesMap.get(curr.parentId);
     }
     return depth;
+  }
+
+  onSeparationChange(event: Event): void {
+    const factor = parseFloat((event.target as HTMLInputElement).value);
+    this.separation.set(factor);
+    this.updateSeparation(factor);
+  }
+
+  private updateSeparation(factor: number): void {
+    if (!this.simulation) return;
+    this.simulation
+      .force('charge', d3.forceManyBody().strength(FORCE_CHARGE_STRENGTH * factor))
+      .force('link', d3.forceLink(this.links).id((d: any) => d.id).distance(FORCE_LINK_DISTANCE * factor))
+      .force('collide', d3.forceCollide().radius((d: any) => d.r + FORCE_COLLIDE_PADDING * factor).iterations(FORCE_COLLIDE_ITERATIONS));
+    this.simulation.alpha(0.5).restart();
   }
 
   downloadSVG(): void {
