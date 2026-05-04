@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseGraphComponent, PhysicsConfig } from '../base-graph.component';
 import { D3_CONFIG } from '../../config/d3-config';
+import { graphs, colors } from '../../design-system';
 
 @Component({
   selector: 'app-module-function-graph',
@@ -11,6 +12,10 @@ import { D3_CONFIG } from '../../config/d3-config';
   styleUrls: ['./module-function-graph.component.css']
 })
 export class ModuleFunctionGraphComponent extends BaseGraphComponent {
+  // Design System
+  graphs = graphs;
+  colors = colors;
+
   /**
    * Module-function view physics: stronger charge/repulsion, shorter links
    * Creates a more spread-out view with better function separation
