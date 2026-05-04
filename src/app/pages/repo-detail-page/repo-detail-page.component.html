@@ -68,6 +68,15 @@
       </div>
     </div>
   </div>
+
+  <!-- Metrics Tabs Component -->
+  <app-metrics-tabs
+    *ngIf="scan()"
+    [metricKeys]="getMetricKeys()"
+    [metricsData]="getMetricsData()"
+  >
+  </app-metrics-tabs>
+
   <div class="my-3">
     <app-reports-navbar [(selected)]="selectedReport"> </app-reports-navbar>
   </div>
