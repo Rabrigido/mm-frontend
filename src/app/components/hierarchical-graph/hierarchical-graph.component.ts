@@ -8,6 +8,7 @@ import { D3_CONFIG } from '../../config/d3-config';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './hierarchical-graph.component.html',
+  
   styleUrls: ['./hierarchical-graph.component.css']
 })
 export class HierarchicalGraphComponent extends BaseGraphComponent {
@@ -59,11 +60,10 @@ export class HierarchicalGraphComponent extends BaseGraphComponent {
    * User can click to expand and see child nodes
    */
   override filterNodesAndLinks(): void {
-    // Show only root nodes initially
     const rootNodes = Array.from(this.allNodesMap.values())
       .filter(n => !n.parentId);
 
     this.nodes = rootNodes.map(n => this.createRenderNode(n));
-    this.updateLinks();
+    this.rebuildLinks();
   }
 }

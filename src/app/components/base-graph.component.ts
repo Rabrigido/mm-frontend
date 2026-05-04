@@ -6,10 +6,11 @@
 
 import { Component, ElementRef, Input, OnInit, OnDestroy, ViewChild, inject, signal } from '@angular/core';
 import * as d3 from 'd3';
-import { GraphDataService, GraphNode, GraphLink, NodeType } from '../../services/graph-data.service';
-import { D3_CONFIG, D3ColorUtils } from '../../config/d3-config.ts';
-import { downloadSvg, downloadPng } from './component.utils';
-
+import { D3_CONFIG, D3ColorUtils } from '../config/d3-config';
+import { GraphDataService } from '../services/graph-data.service';
+import { NodeType, GraphNode, GraphLink } from '../types/graph.types';
+import { downloadSvg, downloadPng } from './common/component.utils';
+ 
 /**
  * Render-specific node data (includes D3 simulation data)
  */
@@ -219,7 +220,8 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
     // Render on every tick
     this.simulation.on('tick', () => {
       this.updateArrowMarkers();
-      this.updateLinks(gLinks);
+      this.updateLinksForView(gLinks);
+      this.rebuildLinks();
       this.updateNodes(gNodes);
       this.drawEnclosures(gEnclosures, this.currentEnclosures);
     });
@@ -228,7 +230,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   /**
    * Update link rendering
    */
-  private updateLinks(layer: any) {
+  private updateLinksForView(layer: any) {
     layer.selectAll('line')
       .data(this.links)
       .join('line')
@@ -390,7 +392,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   /**
    * Update links based on visible nodes
    */
-  protected updateLinks() {
+  protected rebuildLinks() {
     const visibleNodeIds = new Set(this.nodes.map(n => n.id));
     const visibleNodeMap = new Map(this.nodes.map(n => [n.id, n]));
     const newLinks = new Map<string, RenderLink>();
@@ -462,7 +464,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
    * Update simulation state (links and restart)
    */
   protected updateSimulationState() {
-    this.updateLinks();
+    this.rebuildLinks();
     this.simulation.nodes(this.nodes);
     this.simulation.force('link').links(this.links);
     this.simulation.alpha(0.8).restart();

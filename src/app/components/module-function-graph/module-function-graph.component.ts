@@ -63,7 +63,7 @@ export class ModuleFunctionGraphComponent extends BaseGraphComponent {
       .filter(n => !n.parentId);
 
     this.nodes = rootNodes.map(n => this.createRenderNode(n));
-    this.updateLinks();
+    this.rebuildLinks();
   }
 }
 
