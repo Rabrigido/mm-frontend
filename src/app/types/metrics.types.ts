@@ -6,7 +6,7 @@
 /**
  * Generic metric data structure (can be nested)
  */
-export type MetricData = Record<string, number | MetricData | MetricData[]>;
+export type MetricData = Record<string, number | Record<string, any> | any[]>;
 
 /**
  * File-level coupling metrics
