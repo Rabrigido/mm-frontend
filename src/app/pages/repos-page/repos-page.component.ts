@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReposService } from '../../services/repos.service';
 import { Repo } from '../../models/repo';
+import { components, colors, spacing, typography } from '../../design-system';
 
 @Component({
   selector: 'app-repos-page',
@@ -12,6 +13,12 @@ import { Repo } from '../../models/repo';
 })
 export class ReposPageComponent {
   private reposService = inject(ReposService);
+
+  // Design System
+  components = components;
+  colors = colors;
+  spacing = spacing;
+  typography = typography;
 
   repos = signal<Repo[] | null>(null);
   loading = signal(false);
