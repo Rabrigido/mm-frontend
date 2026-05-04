@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseGraphComponent, PhysicsConfig } from '../base-graph.component';
 import { D3_CONFIG } from '../../config/d3-config';
+import { graphs, colors } from '../../design-system';
 
 @Component({
   selector: 'app-hierarchical-graph',
@@ -12,6 +13,10 @@ import { D3_CONFIG } from '../../config/d3-config';
   styleUrls: ['./hierarchical-graph.component.css']
 })
 export class HierarchicalGraphComponent extends BaseGraphComponent {
+  // Design System
+  graphs = graphs;
+  colors = colors;
+
   /**
    * Hierarchical view physics: moderate separation with strong cluster effect
    * Shows all levels of hierarchy with folder enclosures
