@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { NgFor, NgClass } from '@angular/common';
+import { components, colors, spacing } from '../../../design-system';
 
 export type ReportKey =
   | 'hierarchical-graph'
@@ -19,6 +20,10 @@ export interface ReportItem {
   templateUrl: './reports-navbar.component.html',
 })
 export class ReportsNavbarComponent implements OnChanges {
+  // Design System
+  components = components;
+  colors = colors;
+  spacing = spacing;
   @Input() items: ReportItem[] = [
   
     { key: 'hierarchical-graph', label: 'Project summary' },  
