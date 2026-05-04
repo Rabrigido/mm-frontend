@@ -1,36 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { forkJoin, map, Observable, of, catchError } from 'rxjs';
 import { MetricsService } from './metrics.service';
+import { GraphNode, GraphLink, HierarchicalData } from '../types/graph.types';
 
-export type NodeType = 'DIRECTORY' | 'FILE' | 'CLASS' | 'FUNCTION';
-
-export interface GraphNode {
-  id: string;
-  label: string;
-  type: NodeType;
-  parentId?: string;
-  children?: GraphNode[];
-  loc?: number;
-  x?: number;
-  y?: number;
-  depth?: number;
-}
-
-// 2. PRESERVE FAN METRICS IN SERVICE
-export interface GraphLink {
-  source: string;
-  target: string;
-  value: number;
-  type: 'DEPENDENCY' | 'COUPLING' | 'CALL';
-  direction?: 'fan-in' | 'fan-out';
-  fanIn?: number;          // NEW: Preserve actual counts
-  fanOut?: number;         // NEW: Preserve actual counts
-}
-
-export interface HierarchicalData {
-  nodes: GraphNode[];
-  links: GraphLink[];
-}
+// Re-export for backward compatibility
+export type { GraphNode, GraphLink, HierarchicalData } from '../types/graph.types';
 
 @Injectable({ providedIn: 'root' })
 export class GraphDataService {
