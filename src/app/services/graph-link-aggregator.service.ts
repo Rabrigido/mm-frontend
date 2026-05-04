@@ -26,6 +26,9 @@ export class GraphLinkAggregatorService {
   ): GraphLink[] {
     const links: GraphLink[] = [];
 
+    // 0. File-level dependencies (imports)
+    this.buildFileDependencies(data, nodesMap, links);
+
     // 1. Method-level coupling
     const methodLinks = new Map<string, { count: number; direction: 'fan-out' | 'fan-in' }>();
     this.buildMethodLevelCoupling(data, nodesMap, classToFilesMap, methodLinks, links);
@@ -42,6 +45,31 @@ export class GraphLinkAggregatorService {
     this.buildFileLevelCoupling(classLinks, nodesMap, functionLinks, links);
 
     return links;
+  }
+
+  /**
+   * Builds FILE-level dependency links from file imports.
+   * These represent direct file-to-file dependencies.
+   */
+  private buildFileDependencies(
+    data: any,
+    nodesMap: Map<string, GraphNode>,
+    links: GraphLink[]
+  ) {
+    const depGraph = data.dependencies?.graph || {};
+    Object.entries(depGraph).forEach(([src, imports]: [string, any]) => {
+      if (!nodesMap.has(src)) return;
+      (imports as string[]).forEach(target => {
+        if (nodesMap.has(target) && src !== target) {
+          links.push({
+            source: src,
+            target: target,
+            value: 1,
+            type: 'DEPENDENCY'
+          });
+        }
+      });
+    });
   }
 
   /**
