@@ -1,13 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseGraphComponent, PhysicsConfig } from '../base-graph.component';
 import { D3_CONFIG } from '../../config/d3-config';
 import { graphs, colors } from '../../design-system';
+import { GraphTreeModalComponent } from '../graph-tree-modal/graph-tree-modal.component';
 
 @Component({
   selector: 'app-module-class-graph',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, GraphTreeModalComponent],
   templateUrl: './module-class-graph.component.html',
   styleUrls: ['./module-class-graph.component.css']
 })
@@ -15,6 +16,7 @@ export class ModuleClassGraphComponent extends BaseGraphComponent {
   // Design System
   graphs = graphs;
   colors = colors;
+  showTreeModal = signal(false);
 
   /**
    * Module-class view physics: same as hierarchical but with reduced push force

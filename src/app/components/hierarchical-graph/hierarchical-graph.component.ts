@@ -1,13 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseGraphComponent, PhysicsConfig } from '../base-graph.component';
 import { D3_CONFIG } from '../../config/d3-config';
 import { graphs, colors } from '../../design-system';
+import { GraphTreeModalComponent } from '../graph-tree-modal/graph-tree-modal.component';
 
 @Component({
   selector: 'app-hierarchical-graph',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, GraphTreeModalComponent],
   templateUrl: './hierarchical-graph.component.html',
   
   styleUrls: ['./hierarchical-graph.component.css']
@@ -16,6 +17,7 @@ export class HierarchicalGraphComponent extends BaseGraphComponent {
   // Design System
   graphs = graphs;
   colors = colors;
+  showTreeModal = signal(false);
 
   /**
    * Hierarchical view physics: moderate separation with strong cluster effect

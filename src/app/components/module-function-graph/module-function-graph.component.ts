@@ -1,13 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseGraphComponent, PhysicsConfig } from '../base-graph.component';
 import { D3_CONFIG } from '../../config/d3-config';
 import { graphs, colors } from '../../design-system';
+import { GraphTreeModalComponent } from '../graph-tree-modal/graph-tree-modal.component';
 
 @Component({
   selector: 'app-module-function-graph',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, GraphTreeModalComponent],
   templateUrl: './module-function-graph.component.html',
   styleUrls: ['./module-function-graph.component.css']
 })
@@ -15,6 +16,7 @@ export class ModuleFunctionGraphComponent extends BaseGraphComponent {
   // Design System
   graphs = graphs;
   colors = colors;
+  showTreeModal = signal(false);
 
   /**
    * Module-function view physics: stronger charge/repulsion, shorter links
