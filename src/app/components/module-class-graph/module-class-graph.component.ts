@@ -1,7 +1,9 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BaseGraphComponent, PhysicsConfig } from '../base-graph.component';
+import * as d3 from 'd3';
+import { BaseGraphComponent, PhysicsConfig, Enclosure } from '../base-graph.component';
 import { D3_CONFIG } from '../../config/d3-config';
+import { NodeType } from '../../types/graph.types';
 import { graphs, colors } from '../../design-system';
 import { GraphTreeModalComponent } from '../graph-tree-modal/graph-tree-modal.component';
 
@@ -71,6 +73,76 @@ export class ModuleClassGraphComponent extends BaseGraphComponent {
 
     this.nodes = rootNodes.map(n => this.createRenderNode(n));
     this.rebuildLinks();
+  }
+
+  /**
+   * Enclosure calculation: include ALL descendants (not just direct children)
+   * so that deeply nested nodes are properly wrapped inside parent bubbles.
+   */
+  override calculateEnclosures(): Enclosure[] {
+    const enclosures: Enclosure[] = [];
+    const colorScheme = this.getColorScheme();
+
+    this.expandedNodes.forEach(parentId => {
+      const descendants = this.nodes.filter(n => this.isDescendant(n.id, parentId));
+
+      if (descendants.length > 0) {
+        const pData = this.allNodesMap.get(parentId);
+        const circle = d3.packEnclose(descendants as any);
+        if (circle) {
+          enclosures.push({
+            id: parentId,
+            x: circle.x,
+            y: circle.y,
+            r: circle.r + D3_CONFIG.ENCLOSURE.PADDING,
+            label: pData?.label || '',
+            color: colorScheme[pData?.type as NodeType] || '#ccc'
+          });
+        }
+      }
+    });
+
+    return enclosures;
+  }
+
+  /**
+   * Rebuild links using actual coupling (fan-in + fan-out) for link value,
+   * so link color intensity reflects real dependency strength.
+   */
+  override rebuildLinks(): void {
+    const visibleNodeIds = new Set(this.nodes.map(n => n.id));
+    const visibleNodeMap = new Map(this.nodes.map(n => [n.id, n]));
+    const newLinks = new Map<string, any>();
+
+    const findVisible = (id: string): string | undefined => {
+      if (visibleNodeIds.has(id)) return id;
+      let curr = this.allNodesMap.get(id);
+      while (curr && curr.parentId) {
+        if (visibleNodeIds.has(curr.parentId)) return curr.parentId;
+        curr = this.allNodesMap.get(curr.parentId);
+      }
+      return undefined;
+    };
+
+    this.allLinks.forEach(l => {
+      const sourceId = findVisible(l.source as string);
+      const targetId = findVisible(l.target as string);
+      if (sourceId && targetId && sourceId !== targetId) {
+        const key = `${sourceId}->${targetId}`;
+        const couplingValue = (l.fanIn ?? 0) + (l.fanOut ?? 0);
+        if (!newLinks.has(key)) {
+          newLinks.set(key, {
+            source: visibleNodeMap.get(sourceId)!,
+            target: visibleNodeMap.get(targetId)!,
+            value: couplingValue || l.value || 1,
+          });
+        } else {
+          newLinks.get(key)!.value += couplingValue || l.value || 1;
+        }
+      }
+    });
+
+    this.links = Array.from(newLinks.values());
   }
 }
 
