@@ -11,6 +11,9 @@ import { components, colors, spacing, typography } from '../../design-system';
   imports: [CommonModule, RouterLink],
   templateUrl: './repos-page.component.html',
 })
+/**
+ * Page listing all repos with add/delete functionality.
+ */
 export class ReposPageComponent {
   private reposService = inject(ReposService);
 
@@ -33,9 +36,7 @@ export class ReposPageComponent {
     this.loading.set(true);
     this.error.set(null);
     this.reposService.getRepos().subscribe({
-      next: (data) => {
-        console.log(data);
-        this.repos.set(data); this.loading.set(false); },
+      next: (data) => { this.repos.set(data); this.loading.set(false); },
       error: (e) => { this.error.set(e?.message ?? 'Error cargando repos'); this.loading.set(false); }
     });
   }

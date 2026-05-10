@@ -8,18 +8,22 @@ import { HierarchicalData } from '../types/graph.types';
 // Re-export for backward compatibility
 export type { GraphNode, GraphLink, HierarchicalData } from '../types/graph.types';
 
-/**
- * Orchestrates graph data loading and building.
- * Delegates to specialized services:
- * - GraphHierarchyBuilderService: Creates node hierarchy
- * - GraphLinkAggregatorService: Creates and aggregates links
- */
-@Injectable({ providedIn: 'root' })
+  /**
+   * Orchestrates graph data loading and building.
+   * Loads 5 metric endpoints in parallel, then delegates to:
+   * - GraphHierarchyBuilderService for node hierarchy
+   * - GraphLinkAggregatorService for link creation/aggregation
+   */
+  @Injectable({ providedIn: 'root' })
 export class GraphDataService {
   private metrics = inject(MetricsService);
   private hierarchyBuilder = inject(GraphHierarchyBuilderService);
   private linkAggregator = inject(GraphLinkAggregatorService);
 
+  /**
+   * Loads all metric data via forkJoin and builds the full graph hierarchy + links.
+   * Metric failures are silently caught and default to empty results.
+   */
   loadHierarchy(repoId: string): Observable<HierarchicalData> {
     const req = (name: string) =>
       this.metrics.getMetric(repoId, name).pipe(catchError(() => of({ result: {} })));
@@ -35,6 +39,9 @@ export class GraphDataService {
     );
   }
 
+  /**
+   * 4-step pipeline: build hierarchy -> class mapping -> function mapping -> build links.
+   */
   private buildGraph(data: any): HierarchicalData {
     // 1. Build node hierarchy
     const nodesMap = this.hierarchyBuilder.buildHierarchy(data);

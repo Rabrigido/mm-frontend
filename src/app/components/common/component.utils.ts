@@ -1,3 +1,6 @@
+/**
+ * Serializes an inline SVG element and triggers download as .svg file.
+ */
 export function downloadSvg(container: HTMLElement, filename: string = 'graph.svg'): void {
   const svgEl = container.querySelector('svg');
   if (!svgEl) return;
@@ -13,6 +16,9 @@ export function downloadSvg(container: HTMLElement, filename: string = 'graph.sv
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Renders the SVG onto a canvas element and triggers download as .png file.
+ */
 export function downloadPng(container: HTMLElement, width: number, height: number, filename: string = 'graph.png'): void {
   const svgEl = container.querySelector('svg');
   if (!svgEl) return;

@@ -12,6 +12,10 @@ import { GraphTreeModalComponent } from '../graph-tree-modal/graph-tree-modal.co
   templateUrl: './module-function-graph.component.html',
   styleUrls: ['./module-function-graph.component.css']
 })
+/**
+ * Function-level call graph. Shows files and their functions with CALL-type links.
+ * Uses stronger repulsion and shorter link distances for dense function layouts.
+ */
 export class ModuleFunctionGraphComponent extends BaseGraphComponent {
   // Design System
   graphs = graphs;

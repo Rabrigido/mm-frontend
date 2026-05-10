@@ -1,5 +1,11 @@
+/** Function-coupling analysis utilities: graph, adjacency matrix, top-K. */
+
 export type FNodeId = string; // "file::func"
 
+/**
+ * Builds nodes + edges + degree maps from function-coupling data.
+ * Node ID format: "filePath::functionName".
+ */
 export function buildFunctionGraph(fc: Record<string, any>) {
   const nodesSet = new Set<FNodeId>();
   const edges: Array<{ source: FNodeId; target: FNodeId; value: number }> = [];
@@ -46,6 +52,9 @@ export function buildFunctionGraph(fc: Record<string, any>) {
   return { nodes, edges, fanIn, fanOut: fanOutDeg };
 }
 
+/**
+ * Returns top-K entries from a Map sorted descending by value.
+ */
 export function topKFromMap(m: Map<string, number>, k = 10) {
   return Array.from(m.entries())
     .sort((a, b) => b[1] - a[1])
@@ -53,6 +62,9 @@ export function topKFromMap(m: Map<string, number>, k = 10) {
     .map(([id, v]) => ({ id, value: v }));
 }
 
+/**
+ * Shortens a function node ID showing "folder/file::funcName".
+ */
 export function shortenFunc(id: string) {
   // muestra solo carpeta/archivo y nombre de función
   const [file, func] = id.split('::');
@@ -61,6 +73,9 @@ export function shortenFunc(id: string) {
   return `${fileShort}::${func}`;
 }
 
+/**
+ * Builds an N×N adjacency matrix from function edge data (for heatmap visualization).
+ */
 export function adjacencyForHeatmap(nodes: {id: string}[], edges: {source: string; target: string; value: number}[]) {
   const ids = nodes.map(n => n.id);
   const index = new Map(ids.map((id, i) => [id, i]));

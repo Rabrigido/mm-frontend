@@ -1,8 +1,9 @@
+/** Repository metadata from the backend API. */
 export interface Repo {
-  id: string;                // ej: "23a753c2-2176-4745-b140-f5cd530a72a8"
-  name: string;              // opcional según tu backend
-  codePath?: string;         // donde quedó clonado
-  scannedAt?: string;        // ISO string
+  id: string;
+  name: string;
+  codePath?: string;
+  scannedAt?: string;
   fullName: string;
   stats?: {
     files: number;

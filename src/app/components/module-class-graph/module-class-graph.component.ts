@@ -14,6 +14,11 @@ import { GraphTreeModalComponent } from '../graph-tree-modal/graph-tree-modal.co
   templateUrl: './module-class-graph.component.html',
   styleUrls: ['./module-class-graph.component.css']
 })
+/**
+ * Class-level coupling graph. Shows files and their classes with coupling links.
+ * Overrides calculateEnclosures to include ALL descendants and rebuildLinks to
+ * use fan-in + fan-out for link value intensity.
+ */
 export class ModuleClassGraphComponent extends BaseGraphComponent {
   // Design System
   graphs = graphs;

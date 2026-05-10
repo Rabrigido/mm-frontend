@@ -1,15 +1,22 @@
-// src/app/utils/file-coupling.util.ts
+/** File-coupling analysis utilities: graph, adjacency matrix, Sankey, top-K. */
+
 export type FileCouplingEntry = { fanIn: string[]; fanOut: string[] };
 export type FileCouplingResult = Record<string, FileCouplingEntry>;
 
+/**
+ * Shortens a file path to "parentFolder/fileName.ext" for display.
+ */
 export function shorten(label: string): string {
-  // última parte del path + 1 carpeta de contexto
   const parts = label.split('/');
   const file = parts.pop() || '';
   const folder = parts.pop() || '';
   return folder ? `${folder}/${file}` : file;
 }
 
+/**
+ * Builds nodes + links + degree maps from file-coupling data.
+ * Links are created from fanOut entries where the target also exists.
+ */
 export function buildGraph(fc: FileCouplingResult) {
   // nodes
   const files = Array.from(new Set(Object.keys(fc)));
@@ -35,6 +42,9 @@ export function buildGraph(fc: FileCouplingResult) {
   return { files, nodes, links, degIn, degOut };
 }
 
+/**
+ * Returns top-K entries from a Map sorted descending by value.
+ */
 export function topK<T extends Record<string, number>>(m: Map<string, number>, k = 10) {
   return Array.from(m.entries())
     .sort((a, b) => b[1] - a[1])
@@ -42,6 +52,9 @@ export function topK<T extends Record<string, number>>(m: Map<string, number>, k
     .map(([id, v]) => ({ id, name: shorten(id), value: v }));
 }
 
+/**
+ * Builds an N×N adjacency matrix from file-coupling data.
+ */
 export function buildAdjacency(fc: FileCouplingResult) {
   const ids = Object.keys(fc);
   const index = new Map(ids.map((id, i) => [id, i]));
@@ -57,6 +70,9 @@ export function buildAdjacency(fc: FileCouplingResult) {
   return { ids, matrix };
 }
 
+/**
+ * Converts file-coupling data to Sankey diagram format (ECharts-compatible).
+ */
 export function toSankey(fc: FileCouplingResult, limitPerNode = 6) {
   const nodes = Array.from(new Set(Object.keys(fc))).map(id => ({ name: shorten(id) }));
   const idToShort = new Map(nodes.map(n => [n.name, n.name]));

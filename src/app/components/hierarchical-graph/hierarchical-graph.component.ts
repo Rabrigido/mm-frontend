@@ -13,6 +13,10 @@ import { GraphTreeModalComponent } from '../graph-tree-modal/graph-tree-modal.co
   
   styleUrls: ['./hierarchical-graph.component.css']
 })
+/**
+ * Hierarchical graph view showing the full directory/file/class/function tree.
+ * Root nodes (no parentId) are shown initially; clicking expands children.
+ */
 export class HierarchicalGraphComponent extends BaseGraphComponent {
   // Design System
   graphs = graphs;
