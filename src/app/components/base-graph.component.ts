@@ -94,6 +94,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   protected nodes: RenderNode[] = [];
   protected links: RenderLink[] = [];
   protected expandedNodes = new Set<string>();
+  protected hiddenNodes = new Set<string>();
   protected currentEnclosures: Enclosure[] = [];
 
   // D3 objects
@@ -434,6 +435,28 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Handle node selection from tree modal
+   */
+  onNodeSelected(nodeId: string): void {
+    if (this.hiddenNodes.has(nodeId)) {
+      this.hiddenNodes.delete(nodeId);
+      // Re-add node if it's now visible
+      const nodeData = this.allNodesMap.get(nodeId);
+      if (nodeData) {
+        this.nodes.push(this.createRenderNode(nodeData));
+      }
+    } else {
+      this.hiddenNodes.add(nodeId);
+      // Remove node and its descendants from current visible nodes
+      this.nodes = this.nodes.filter(n => n.id !== nodeId && !this.isDescendant(n.id, nodeId));
+      // Also remove from expanded nodes if it was expanded
+      this.expandedNodes.delete(nodeId);
+    }
+
+    this.updateSimulationState();
+  }
+
+  /**
    * Handle node click - expand or collapse
    */
   protected handleNodeClick(event: MouseEvent, node: RenderNode) {
@@ -443,7 +466,9 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
     this.expandedNodes.add(node.id);
     this.nodes = this.nodes.filter(n => n.id !== node.id);
 
-    const children = original.children.map(c => this.createRenderNode(c, node.x, node.y));
+    const children = original.children
+      .filter(c => !this.hiddenNodes.has(c.id))
+      .map(c => this.createRenderNode(c, node.x, node.y));
     this.nodes.push(...children);
 
     this.updateSimulationState();
@@ -600,9 +625,11 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
               this.nodes.splice(parentIndex, 1);
 
               if (nodeData.children) {
-                const children = nodeData.children.map(c =>
-                  this.createRenderNode(c, parentNode.x || 0, parentNode.y || 0)
-                );
+                const children = nodeData.children
+                  .filter(c => !this.hiddenNodes.has(c.id))
+                  .map(c =>
+                    this.createRenderNode(c, parentNode.x || 0, parentNode.y || 0)
+                  );
                 this.nodes.push(...children);
               }
             }
