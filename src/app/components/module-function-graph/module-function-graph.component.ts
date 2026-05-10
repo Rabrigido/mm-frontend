@@ -66,8 +66,9 @@ export class ModuleFunctionGraphComponent extends BaseGraphComponent {
    * User can click to expand and see child nodes
    */
   override filterNodesAndLinks(): void {
+    const hidden = this.hiddenNodes();
     const rootNodes = Array.from(this.allNodesMap.values())
-      .filter(n => !n.parentId && !this.hiddenNodes.has(n.id));
+      .filter(n => !n.parentId && !hidden.has(n.id));
 
     this.nodes = rootNodes.map(n => this.createRenderNode(n));
     this.rebuildLinks();
