@@ -91,6 +91,7 @@
   <app-graph-tree-modal
     [isOpen]="showTreeModal()"
     [nodes]="allNodes"
+    (nodeSelected)="onNodeSelected($event)"
     (close)="showTreeModal.set(false)">
   </app-graph-tree-modal>
 

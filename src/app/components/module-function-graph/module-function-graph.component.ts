@@ -67,7 +67,7 @@ export class ModuleFunctionGraphComponent extends BaseGraphComponent {
    */
   override filterNodesAndLinks(): void {
     const rootNodes = Array.from(this.allNodesMap.values())
-      .filter(n => !n.parentId);
+      .filter(n => !n.parentId && !this.hiddenNodes.has(n.id));
 
     this.nodes = rootNodes.map(n => this.createRenderNode(n));
     this.rebuildLinks();
