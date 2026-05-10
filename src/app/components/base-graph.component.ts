@@ -84,7 +84,12 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
 
   // Internal state
   protected allNodesMap = new Map<string, GraphNode>();
-  protected allLinks: GraphLink[] = [];
+  allLinks: GraphLink[] = [];
+
+  /** Public accessor for tree modal and other consumers */
+  get allNodes(): GraphNode[] {
+    return Array.from(this.allNodesMap.values());
+  }
 
   protected nodes: RenderNode[] = [];
   protected links: RenderLink[] = [];
