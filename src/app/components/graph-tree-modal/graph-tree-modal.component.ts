@@ -33,6 +33,7 @@ const NODE_ICONS: Record<NodeType, string> = {
 })
 export class GraphTreeModalComponent {
   @Input({ required: true }) nodes: GraphNode[] = [];
+  @Input() hiddenNodeIds = new Set<string>();
   @Input() isOpen = false;
   @Output() close = new EventEmitter<void>();
   @Output() nodeSelected = new EventEmitter<string>();
@@ -95,6 +96,10 @@ export class GraphTreeModalComponent {
     return NODE_COLORS[type] || '#999';
   }
 
+  isNodeHidden(id: string): boolean {
+    return this.hiddenNodeIds.has(id);
+  }
+
   toggleExpand(id: string): void {
     const set = new Set(this.expandedSignal());
     if (set.has(id)) set.delete(id);
@@ -113,7 +118,6 @@ export class GraphTreeModalComponent {
 
   selectNode(id: string): void {
     this.nodeSelected.emit(id);
-    this.close.emit();
   }
 
   closeModal(): void {
