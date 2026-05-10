@@ -1,0 +1,88 @@
+<div
+  *ngIf="isOpen"
+  class="fixed inset-0 z-50 flex items-center justify-center"
+  (click)="closeModal()">
+
+  <div class="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
+
+  <div
+    class="relative bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[70vh] flex flex-col m-4"
+    (click)="stopPropagation($event)">
+
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+      <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+        <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        Graph Entities
+      </h2>
+      <button
+        (click)="closeModal()"
+        class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="px-5 py-3 border-b border-slate-100">
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search entities..."
+          [value]="searchText()"
+          (input)="onSearch($event)"
+          class="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto px-2 py-2">
+      <div *ngIf="treeItems().length === 0" class="text-center py-8 text-sm text-slate-400">
+        No entities match your search.
+      </div>
+
+      <div
+        *ngFor="let item of treeItems(); let i = index"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors text-sm group"
+        [style.paddingLeft.px]="16 + item.depth * 20"
+        (click)="selectNode(item.node.id)">
+
+        <button
+          *ngIf="item.hasChildren"
+          (click)="stopPropagation($event); toggleExpand(item.node.id)"
+          class="flex-shrink-0 w-4 h-4 flex items-center justify-center rounded hover:bg-slate-200 transition-colors">
+          <svg
+            class="w-3 h-3 text-slate-500 transition-transform"
+            [class.rotate-90]="treeExpanded(item.node.id)"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        <span
+          *ngIf="!item.hasChildren"
+          class="flex-shrink-0 w-4 h-4"></span>
+
+        <span
+          class="flex-shrink-0 w-2.5 h-2.5 rounded-full"
+          [style.backgroundColor]="getNodeColor(item.node.type)"></span>
+
+        <span class="flex-1 truncate text-slate-700 font-medium group-hover:text-indigo-600 transition-colors">
+          {{ item.node.label }}
+        </span>
+
+        <span class="flex-shrink-0 text-[10px] uppercase tracking-wider text-slate-400 font-semibold px-1.5 py-0.5 rounded bg-slate-100">
+          {{ item.node.type === 'FUNCTION' || item.node.type === 'METHOD' ? 'fn' : item.node.type.slice(0, 4) }}
+        </span>
+      </div>
+    </div>
+
+    <div class="px-5 py-3 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
+      <span>{{ treeItems().length }} entities</span>
+      <span>Click an entity to select</span>
+    </div>
+  </div>
+</div>
