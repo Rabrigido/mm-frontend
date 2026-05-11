@@ -1,0 +1,83 @@
+<div
+  *ngIf="isOpen"
+  [class]="'fixed inset-0 z-50 ' + components.flex.center"
+  (click)="close.emit()">
+
+  <div
+    [class]="'relative w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl ' + colors.neutral.bg + ' ' + spacing.radius.md + ' border ' + colors.border.primary + ' ' + spacing.margin.md"
+    (click)="stopPropagation($event)">
+
+    <div [class]="components.flex.between + ' px-5 ' + spacing.paddingY.lg + ' border-b ' + colors.border.light">
+      <h2 [class]="typography.heading.md + ' ' + colors.text.primary">Repository Details</h2>
+      <button (click)="close.emit()" [class]="'p-1 ' + spacing.radius.sm + ' text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors'">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto px-5 py-4">
+      <div *ngIf="loading" [class]="colors.text.secondary + ' ' + spacing.marginBottom.lg">Cargando…</div>
+      <div *ngIf="error" [class]="colors.danger.text + ' ' + spacing.marginBottom.lg">{{ error }}</div>
+
+      <div *ngIf="repo as r" [class]="colors.neutral.bg + ' rounded-2xl border ' + spacing.padding.md">
+        <div class="text-lg font-semibold">{{ r.fullName || r.id }}</div>
+        <div class="text-xs text-gray-500 break-all">{{ r.codePath }}</div>
+
+        <div [class]="spacing.marginTop.md">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs" *ngIf="r.stats?.byExtension as ext">
+            <div [class]="colors.background.light + ' ' + spacing.radius.sm + ' ' + spacing.padding.xs" *ngFor="let k of objectKeys(ext)">
+              <div [class]="colors.text.light">{{ k }}</div>
+              <div [class]="typography.weight.semibold">{{ ext[k] }}</div>
+            </div>
+            <div *ngIf="!objectKeys(ext).length" [class]="colors.text.light">—</div>
+          </div>
+        </div>
+
+        <div [class]="spacing.marginTop.lg + ' text-xs ' + colors.text.light" *ngIf="r.scannedAt">
+          Último scan: {{ r.scannedAt | date : "short" }}
+        </div>
+
+        <div [class]="'mt-2 flex ' + spacing.gap.sm">
+          <button [class]="components.button.success + ' disabled:opacity-60'" (click)="runScan.emit()" [disabled]="loading">
+            Ejecutar scanner
+          </button>
+        </div>
+
+        <div *ngIf="scan as s" [class]="spacing.marginTop.xl + ' ' + colors.neutral.bg + ' rounded-2xl border ' + spacing.padding.md">
+
+          <div [class]="components.flex.between + ' ' + spacing.marginBottom.md">
+            <h2 class="text-xl font-semibold">Resultado del scan</h2>
+            <button [class]="'px-3 py-1.5 rounded-lg bg-gray-800 text-white hover:bg-black text-sm'" (click)="downloadScanJson.emit()">
+              Descargar JSON
+            </button>
+          </div>
+
+          <div [class]="typography.body.sm + ' ' + colors.neutral.text">
+            <div [class]="spacing.marginBottom.sm"><strong>Repo ID:</strong> {{ s.repoId }}</div>
+            <div [class]="spacing.marginBottom.sm"><strong>Scanned At:</strong> {{ s.scannedAt | date : "short" }}</div>
+
+            <div class="grid md:grid-cols-3 gap-3">
+              <div [class]="colors.background.light + ' ' + spacing.radius.md + ' ' + spacing.padding.sm">
+                <div [class]="colors.text.light + ' ' + typography.body.xs">Archivos</div>
+                <div class="text-lg font-bold">{{ s.stats.files }}</div>
+              </div>
+              <div [class]="colors.background.light + ' ' + spacing.radius.md + ' ' + spacing.padding.sm">
+                <div [class]="colors.text.light + ' ' + typography.body.xs">Líneas</div>
+                <div class="text-lg font-bold">{{ s.stats.lines }}</div>
+              </div>
+              <div [class]="colors.background.light + ' ' + spacing.radius.md + ' ' + spacing.padding.sm">
+                <div [class]="colors.text.light + ' ' + typography.body.xs">Imports / Exports</div>
+                <div class="text-lg font-bold">{{ s.stats.imports }} / {{ s.stats.exports }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <app-metrics-tabs *ngIf="scan" [metricKeys]="getMetricKeys()" [metricsData]="getMetricsData()">
+        </app-metrics-tabs>
+      </div>
+    </div>
+
+  </div>
+</div>
