@@ -1,81 +1,15 @@
 <div class="mx-auto p-6">
   <a routerLink="/repos" class="text-sm text-blue-600 hover:underline">← Volver</a>
 
-  <h1 class="text-2xl font-bold mt-2 mb-4">
+  <!-- <h1 class="text-2xl font-bold mt-2 mb-4">
     Repo: {{ repo()?.fullName || repo()?.id }}
-  </h1>
+  </h1> -->
 
-  <div *ngIf="loading()" class="text-gray-600 mb-4">Cargando…</div>
-  <div *ngIf="error()" class="text-red-600 mb-4">{{ error() }}</div>
 
-  <!-- Card: Datos del repo -->
-  <div *ngIf="repo() as r" class="bg-white rounded-2xl border p-4">
-    <div class="text-lg font-semibold">{{ r.fullName || r.id }}</div>
-    <div class="text-xs text-gray-500 break-all">{{ r.codePath }}</div>
 
-    <div class="mt-3">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs" *ngIf="r.stats?.byExtension as ext">
-        <div class="bg-gray-50 rounded-lg p-2" *ngFor="let k of objectKeys(ext)">
-          <div class="text-gray-500">{{ k }}</div>
-          <div class="font-semibold">{{ ext[k] }}</div>
-        </div>
-        <div *ngIf="!objectKeys(ext).length" class="text-gray-500">—</div>
-      </div>
-    </div>
 
-    <div class="mt-4 text-xs text-gray-500" *ngIf="r.scannedAt">
-      Último scan: {{ r.scannedAt | date : "short" }}
-    </div>
-
-    <div class="mt-6 flex gap-2">
-      <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white disabled:opacity-60" (click)="runScan()"
-        [disabled]="loading()">
-        Ejecutar scanner
-      </button>
-    </div>
-  </div>
-
-  <!-- Card: Resultado del scan (stats generales) -->
-  <div *ngIf="scan() as s" class="mt-6 bg-white rounded-2xl border p-4">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="text-xl font-semibold">Resultado del scan</h2>
-      <button class="px-3 py-1.5 rounded-lg bg-gray-800 text-white hover:bg-black" (click)="downloadScanJson()">
-        Descargar JSON
-      </button>
-    </div>
-
-    <div class="text-sm text-gray-700">
-      <div class="mb-2"><strong>Repo ID:</strong> {{ s.repoId }}</div>
-      <div class="mb-2">
-        <strong>Scanned At:</strong> {{ s.scannedAt | date : "short" }}
-      </div>
-
-      <div class="grid md:grid-cols-3 gap-3">
-        <div class="bg-gray-50 rounded-xl p-3">
-          <div class="text-gray-500 text-xs">Archivos</div>
-          <div class="text-lg font-bold">{{ s.stats.files }}</div>
-        </div>
-        <div class="bg-gray-50 rounded-xl p-3">
-          <div class="text-gray-500 text-xs">Líneas</div>
-          <div class="text-lg font-bold">{{ s.stats.lines }}</div>
-        </div>
-        <div class="bg-gray-50 rounded-xl p-3">
-          <div class="text-gray-500 text-xs">Imports / Exports</div>
-          <div class="text-lg font-bold">
-            {{ s.stats.imports }} / {{ s.stats.exports }}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Metrics Tabs Component -->
-  <app-metrics-tabs
-    *ngIf="scan()"
-    [metricKeys]="getMetricKeys()"
-    [metricsData]="getMetricsData()"
-  >
-  </app-metrics-tabs>
 
   <div class="my-3">
     <app-reports-navbar [(selected)]="selectedReport"> </app-reports-navbar>
@@ -87,13 +21,16 @@
       </app-loc-sloc>
  -->
 
-      <app-hierarchical-graph *ngSwitchCase="'hierarchical-graph'" [repoId]="repo()!.id">
+      <app-hierarchical-graph *ngSwitchCase="'hierarchical-graph'" [repoId]="repo()!.id"
+        (openDetailsModal)="showDetailsModal.set(true)">
       </app-hierarchical-graph>
 
-      <app-module-class-graph *ngSwitchCase="'module-class-graph'" [repoId]="repo()!.id">
+      <app-module-class-graph *ngSwitchCase="'module-class-graph'" [repoId]="repo()!.id"
+        (openDetailsModal)="showDetailsModal.set(true)">
       </app-module-class-graph>
 
-      <app-module-function-graph *ngSwitchCase="'module-function-graph'" [repoId]="repo()!.id">
+      <app-module-function-graph *ngSwitchCase="'module-function-graph'" [repoId]="repo()!.id"
+        (openDetailsModal)="showDetailsModal.set(true)">
       </app-module-function-graph>
 
       <!-- <app-files-metric *ngSwitchCase="'files'" [repoId]="repo()!.id">
@@ -121,3 +58,15 @@
   </div>
 
 </div>
+
+<!-- Details Modal -->
+<app-details-component
+  [isOpen]="showDetailsModal()"
+  [repo]="repo()"
+  [scan]="scan()"
+  [loading]="loading()"
+  [error]="error()"
+  (runScan)="runScan()"
+  (downloadScanJson)="downloadScanJson()"
+  (close)="showDetailsModal.set(false)">
+</app-details-component>

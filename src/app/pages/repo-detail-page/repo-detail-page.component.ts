@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnDestroy } from '@angular/core';
+import { Component, inject, Input, signal, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ReposService } from '../../services/repos.service';
@@ -6,13 +6,12 @@ import { Repo } from '../../models/repo';
 import { ScanResult } from '../../models/scan-result';
 
 import { ReportsNavbarComponent, ReportKey } from '../../shared/components/reports-navbar/reports-navbar.component';
-import { Input } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { HierarchicalGraphComponent } from '../../components/hierarchical-graph/hierarchical-graph.component';
 import { ModuleClassGraphComponent } from '../../components/module-class-graph/module-class-graph.component';
 import { ModuleFunctionGraphComponent } from '../../components/module-function-graph/module-function-graph.component';
-import { MetricsTabsComponent } from './metrics-tabs.component';
+import { DetailsComponent } from './components/details.component';
 import { ChartRendererService } from '../../services/chart-renderer.service';
 
 /**
@@ -29,7 +28,7 @@ import { ChartRendererService } from '../../services/chart-renderer.service';
     HierarchicalGraphComponent,
     ModuleClassGraphComponent,
     ModuleFunctionGraphComponent,
-    MetricsTabsComponent
+    DetailsComponent
   ],
   templateUrl: './repo-detail-page.component.html',
 })
@@ -49,6 +48,7 @@ export class RepoDetailPageComponent implements OnDestroy {
 
   // Report selection
   selectedReport = signal<ReportKey | null>(null);
+  showDetailsModal = signal(false);
 
   ngOnInit() {
     this.load();
