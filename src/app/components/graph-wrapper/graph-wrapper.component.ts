@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GraphNode } from '../../types/graph.types';
 import { graphs, colors } from '../../design-system';
@@ -15,7 +15,7 @@ export interface LegendItem {
   imports: [CommonModule, GraphTreeModalComponent],
   templateUrl: './graph-wrapper.component.html',
 })
-export class GraphWrapperComponent {
+export class GraphWrapperComponent implements OnDestroy {
   @Input() title = '';
   @Input() legendItems: LegendItem[] = [];
   @Input() loading = false;
@@ -37,6 +37,33 @@ export class GraphWrapperComponent {
 
   graphs = graphs;
   colors = colors;
+  isIdle = signal(false);
+
+  private idleTimer: ReturnType<typeof setTimeout> | null = null;
+
+  @HostListener('mousemove')
+  onMouseMove(): void {
+    this.isIdle.set(false);
+    this.resetIdleTimer();
+  }
+
+  @HostListener('mouseleave')
+  onMouseLeave(): void {
+    this.startIdleTimer();
+  }
+
+  private resetIdleTimer(): void {
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(() => this.isIdle.set(true), 5000);
+  }
+
+  private startIdleTimer(): void {
+    if (!this.idleTimer) this.resetIdleTimer();
+  }
+
+  ngOnDestroy(): void {
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+  }
 
   onSeparationChange(event: Event): void {
     const value = parseFloat((event.target as HTMLInputElement).value);
