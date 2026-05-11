@@ -697,7 +697,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   /**
    * Scales charge, link distance, and collide padding by factor and restarts simulation.
    */
-  private updateSeparation(factor: number): void {
+  protected updateSeparation(factor: number): void {
     if (!this.simulation) return;
     const config = this.getPhysicsConfig();
     this.simulation

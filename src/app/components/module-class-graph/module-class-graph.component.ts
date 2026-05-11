@@ -5,30 +5,26 @@ import { BaseGraphComponent, PhysicsConfig, Enclosure } from '../base-graph.comp
 import { D3_CONFIG } from '../../config/d3-config';
 import { NodeType } from '../../types/graph.types';
 import { graphs, colors } from '../../design-system';
-import { GraphTreeModalComponent } from '../graph-tree-modal/graph-tree-modal.component';
+import { GraphWrapperComponent, LegendItem } from '../graph-wrapper/graph-wrapper.component';
 
 @Component({
   selector: 'app-module-class-graph',
   standalone: true,
-  imports: [CommonModule, GraphTreeModalComponent],
+  imports: [CommonModule, GraphWrapperComponent],
   templateUrl: './module-class-graph.component.html',
   styleUrls: ['./module-class-graph.component.css']
 })
-/**
- * Class-level coupling graph. Shows files and their classes with coupling links.
- * Overrides calculateEnclosures to include ALL descendants and rebuildLinks to
- * use fan-in + fan-out for link value intensity.
- */
 export class ModuleClassGraphComponent extends BaseGraphComponent {
-  // Design System
   graphs = graphs;
   colors = colors;
   showTreeModal = signal(false);
 
-  /**
-   * Module-class view physics: same as hierarchical but with reduced push force
-   * Shows file and class relationships
-   */
+  legendItems: LegendItem[] = [
+    { colorClass: graphs.node.folder, label: 'Folder' },
+    { colorClass: graphs.node.file, label: 'File' },
+    { colorClass: graphs.node.class, label: 'Class' },
+  ];
+
   override getPhysicsConfig(): PhysicsConfig {
     return {
       chargeStrength: D3_CONFIG.PHYSICS.MODULE_CLASS.CHARGE_STRENGTH,
@@ -37,21 +33,15 @@ export class ModuleClassGraphComponent extends BaseGraphComponent {
       collidePadding: D3_CONFIG.PHYSICS.MODULE_CLASS.COLLIDE_PADDING,
       collideIterations: D3_CONFIG.PHYSICS.MODULE_CLASS.COLLIDE_ITERATIONS,
       clusterStrength: 0.2,
-      enclosurePushForce: 0.03,  // Reduced push for tighter grouping
+      enclosurePushForce: 0.03,
       enclosureLeashForce: 0.08,
     };
   }
 
-  /**
-   * Color scheme: centralized in design system
-   */
   override getColorScheme(): Record<string, string> {
     return { ...colors.visualizationHex };
   }
 
-  /**
-   * Radius scheme: same as hierarchical
-   */
   override getRadiusScheme(): Record<string, number> {
     return {
       DIRECTORY: 35,
@@ -62,10 +52,6 @@ export class ModuleClassGraphComponent extends BaseGraphComponent {
     };
   }
 
-  /**
-   * For module-class view: start with root nodes
-   * User can click to expand and see child nodes
-   */
   override filterNodesAndLinks(): void {
     const hidden = this.hiddenNodes();
     const rootNodes = Array.from(this.allNodesMap.values())
@@ -75,10 +61,6 @@ export class ModuleClassGraphComponent extends BaseGraphComponent {
     this.rebuildLinks();
   }
 
-  /**
-   * Enclosure calculation: include ALL descendants (not just direct children)
-   * so that deeply nested nodes are properly wrapped inside parent bubbles.
-   */
   override calculateEnclosures(): Enclosure[] {
     const enclosures: Enclosure[] = [];
     const colorScheme = this.getColorScheme();
@@ -105,10 +87,6 @@ export class ModuleClassGraphComponent extends BaseGraphComponent {
     return enclosures;
   }
 
-  /**
-   * Rebuild links using actual coupling (fan-in + fan-out) for link value,
-   * so link color intensity reflects real dependency strength.
-   */
   override rebuildLinks(): void {
     const visibleNodeIds = new Set(this.nodes.map(n => n.id));
     const visibleNodeMap = new Map(this.nodes.map(n => [n.id, n]));
@@ -145,4 +123,3 @@ export class ModuleClassGraphComponent extends BaseGraphComponent {
     this.links = Array.from(newLinks.values());
   }
 }
-

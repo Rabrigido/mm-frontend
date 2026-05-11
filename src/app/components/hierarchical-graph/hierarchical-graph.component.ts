@@ -3,30 +3,27 @@ import { CommonModule } from '@angular/common';
 import { BaseGraphComponent, PhysicsConfig } from '../base-graph.component';
 import { D3_CONFIG } from '../../config/d3-config';
 import { graphs, colors } from '../../design-system';
-import { GraphTreeModalComponent } from '../graph-tree-modal/graph-tree-modal.component';
+import { GraphWrapperComponent, LegendItem } from '../graph-wrapper/graph-wrapper.component';
 
 @Component({
   selector: 'app-hierarchical-graph',
   standalone: true,
-  imports: [CommonModule, GraphTreeModalComponent],
+  imports: [CommonModule, GraphWrapperComponent],
   templateUrl: './hierarchical-graph.component.html',
-  
   styleUrls: ['./hierarchical-graph.component.css']
 })
-/**
- * Hierarchical graph view showing the full directory/file/class/function tree.
- * Root nodes (no parentId) are shown initially; clicking expands children.
- */
 export class HierarchicalGraphComponent extends BaseGraphComponent {
-  // Design System
   graphs = graphs;
   colors = colors;
   showTreeModal = signal(false);
 
-  /**
-   * Hierarchical view physics: moderate separation with strong cluster effect
-   * Shows all levels of hierarchy with folder enclosures
-   */
+  legendItems: LegendItem[] = [
+    { colorClass: graphs.node.folder, label: 'Folder' },
+    { colorClass: graphs.node.file, label: 'File' },
+    { colorClass: graphs.node.class, label: 'Class' },
+    { colorClass: graphs.node.function, label: 'Function' },
+  ];
+
   override getPhysicsConfig(): PhysicsConfig {
     return {
       chargeStrength: D3_CONFIG.PHYSICS.HIERARCHICAL.CHARGE_STRENGTH,
@@ -40,16 +37,10 @@ export class HierarchicalGraphComponent extends BaseGraphComponent {
     };
   }
 
-  /**
-   * Color scheme: centralized in design system
-   */
   override getColorScheme(): Record<string, string> {
     return { ...colors.visualizationHex };
   }
 
-  /**
-   * Radius scheme for different node types
-   */
   override getRadiusScheme(): Record<string, number> {
     return {
       DIRECTORY: 35,
@@ -60,10 +51,6 @@ export class HierarchicalGraphComponent extends BaseGraphComponent {
     };
   }
 
-  /**
-   * For hierarchical view: start with only root nodes
-   * User can click to expand and see child nodes
-   */
   override filterNodesAndLinks(): void {
     const hidden = this.hiddenNodes();
     const rootNodes = Array.from(this.allNodesMap.values())
