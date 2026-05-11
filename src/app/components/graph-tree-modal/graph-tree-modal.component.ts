@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GraphNode, NodeType } from '../../types/graph.types';
-import { graphs, colors } from '../../design-system';
+import { graphs, colors, spacing, typography, components } from '../../design-system';
 
 /** A flattened tree item used for rendering the hierarchical list. */
 interface TreeItem {
@@ -37,6 +37,10 @@ export class GraphTreeModalComponent {
   @Output() nodeSelected = new EventEmitter<string>();
 
   graphs = graphs;
+  colors = colors;
+  spacing = spacing;
+  typography = typography;
+  components = components;
 
   searchText = signal('');
   private expandedSignal = signal<Set<string>>(new Set());
