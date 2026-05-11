@@ -3,12 +3,14 @@ import { CommonModule } from '@angular/common';
 import { GraphNode, NodeType } from '../../types/graph.types';
 import { graphs } from '../../design-system';
 
+/** A flattened tree item used for rendering the hierarchical list. */
 interface TreeItem {
   node: GraphNode;
   depth: number;
   hasChildren: boolean;
 }
 
+/** Color map for tree item dots by node type. */
 const NODE_COLORS: Record<NodeType, string> = {
   DIRECTORY: '#f59e0b',
   FILE: '#64748b',
@@ -17,6 +19,7 @@ const NODE_COLORS: Record<NodeType, string> = {
   METHOD: '#10b981',
 };
 
+/** Material icon names by node type. */
 const NODE_ICONS: Record<NodeType, string> = {
   DIRECTORY: 'folder',
   FILE: 'description',
@@ -31,6 +34,10 @@ const NODE_ICONS: Record<NodeType, string> = {
   imports: [CommonModule],
   templateUrl: './graph-tree-modal.component.html',
 })
+/**
+ * Modal that displays a searchable, hierarchical tree of graph nodes.
+ * Emits nodeSelected when a user toggles a node's visibility.
+ */
 export class GraphTreeModalComponent {
   @Input({ required: true }) nodes: GraphNode[] = [];
   @Input() hiddenNodeIds = new Set<string>();
@@ -43,6 +50,10 @@ export class GraphTreeModalComponent {
   searchText = signal('');
   private expandedSignal = signal<Set<string>>(new Set());
 
+  /**
+   * Flattened tree list. When searchText is non-empty, only matching nodes
+   * (and their ancestors) are included.
+   */
   readonly treeItems = computed(() => {
     const search = this.searchText().toLowerCase().trim();
     const expanded = this.expandedSignal();
@@ -59,6 +70,9 @@ export class GraphTreeModalComponent {
     return result;
   });
 
+  /**
+   * Returns a Set of all node IDs (including ancestors) that match the search query.
+   */
   private computeMatches(search: string, nodeMap: Map<string, GraphNode>): Set<string> {
     const matches = new Set<string>();
     for (const node of this.nodes) {
@@ -73,6 +87,10 @@ export class GraphTreeModalComponent {
     return matches;
   }
 
+  /**
+   * Recursively adds node and its expanded children to the flat result array,
+   * filtering by matches set when search is active.
+   */
   private addItems(
     node: GraphNode,
     depth: number,
@@ -92,39 +110,18 @@ export class GraphTreeModalComponent {
     }
   }
 
-  getNodeColor(type: NodeType): string {
-    return NODE_COLORS[type] || '#999';
-  }
-
-  isNodeHidden(id: string): boolean {
-    return this.hiddenNodeIds.has(id);
-  }
+  getNodeColor(type: NodeType): string { return NODE_COLORS[type] || '#999'; }
+  isNodeHidden(id: string): boolean { return this.hiddenNodeIds.has(id); }
 
   toggleExpand(id: string): void {
     const set = new Set(this.expandedSignal());
-    if (set.has(id)) set.delete(id);
-    else set.add(id);
+    if (set.has(id)) set.delete(id); else set.add(id);
     this.expandedSignal.set(set);
   }
 
-  onSearch(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.searchText.set(value);
-  }
-
-  treeExpanded(id: string): boolean {
-    return this.expandedSignal().has(id);
-  }
-
-  selectNode(id: string): void {
-    this.nodeSelected.emit(id);
-  }
-
-  closeModal(): void {
-    this.close.emit();
-  }
-
-  stopPropagation(event: Event): void {
-    event.stopPropagation();
-  }
+  onSearch(event: Event): void { this.searchText.set((event.target as HTMLInputElement).value); }
+  treeExpanded(id: string): boolean { return this.expandedSignal().has(id); }
+  selectNode(id: string): void { this.nodeSelected.emit(id); }
+  closeModal(): void { this.close.emit(); }
+  stopPropagation(event: Event): void { event.stopPropagation(); }
 }

@@ -16,4 +16,5 @@ import { RouterOutlet } from '@angular/router';
   </div>
   `
 })
+/** Root component: nav bar + router outlet. */
 export class AppComponent {}

@@ -3,11 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
 
-interface MetricsDto{
-  
+/** Placeholder DTO — currently unused; metrics return `any` via getMetric(). */
+interface MetricsDto {}
 
-}
-
+/**
+ * REST client for fetching individual metric data by repo and metric name.
+ * Endpoint: GET /metrics/:repoId/:metricName.
+ */
 @Injectable({ providedIn: 'root' })
 export class MetricsService {
   private http = inject(HttpClient);
@@ -16,11 +18,6 @@ export class MetricsService {
 
   getMetric(repoId: string, metricName: string): Observable<any> {
     return this.http.get<any>(`${this.base}/metrics/${repoId}/${metricName}`);
-   
   }
-
- 
- 
- 
 
 }

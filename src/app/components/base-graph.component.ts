@@ -1,7 +1,8 @@
 /**
  * Base Graph Component
- * Abstract base class for all D3-based graph visualizations
- * Eliminates 90% code duplication across hierarchical, module-class, and module-function graphs
+ * Abstract base class for all D3-based graph visualizations.
+ * Manages D3 force simulation lifecycle, node/link/enclosure rendering, zoom, and interaction.
+ * Subclasses override physics config, colors, radii, and node filtering via abstract methods.
  */
 
 import { Component, ElementRef, Input, OnInit, OnDestroy, ViewChild, inject, signal } from '@angular/core';
@@ -60,13 +61,16 @@ export interface PhysicsConfig {
 }
 
 /**
- * Abstract base class for all graph visualizations
- * Handles:
- * - D3 simulation setup and rendering
- * - Force calculations (charge, link, center, collide, cluster, enclosure)
- * - Node/link/enclosure rendering
- * - Zoom and interaction
- * - Download functionality
+ * Abstract base class for D3 force-directed graph visualizations.
+ *
+ * Forces: charge (repulsion), link (spring), center (gravity), collide (collision),
+ *         cluster (group by parent), enclosure (keep children inside parent bubbles).
+ *
+ * Subclasses MUST implement:
+ * - getPhysicsConfig()      -> PhysicsConfig
+ * - getColorScheme()        -> Record<string, string>
+ * - getRadiusScheme()       -> Record<string, number>
+ * - filterNodesAndLinks()   -> void
  */
 @Component({
   template: '', // Subclasses must define template
@@ -103,24 +107,13 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   protected width = D3_CONFIG.VIEWPORT.DEFAULT_WIDTH;
   protected height = D3_CONFIG.VIEWPORT.DEFAULT_HEIGHT;
 
-  /**
-   * Subclasses must override to provide physics configuration
-   */
   abstract getPhysicsConfig(): PhysicsConfig;
-
-  /**
-   * Subclasses must override to provide color mapping
-   */
   abstract getColorScheme(): Record<string, string>;
-
-  /**
-   * Subclasses must override to provide radius mapping
-   */
   abstract getRadiusScheme(): Record<string, number>;
 
   /**
-   * Subclasses must override to filter/transform nodes and links
-   * Called after data is loaded
+   * Post-load hook to filter/transform nodes and links before simulation starts.
+   * Called once after data is fetched and parsed.
    */
   abstract filterNodesAndLinks(): void;
 
@@ -133,7 +126,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Load graph data from service
+   * Fetches hierarchy data, builds nodes/links, then initializes the D3 simulation.
    */
   private loadGraph() {
     this.loading.set(true);
@@ -158,7 +151,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Create render node from graph node
+   * Converts a GraphNode into a RenderNode with computed radius, color, and position.
    */
   protected createRenderNode(n: GraphNode, x = 0, y = 0): RenderNode {
     const radiusScheme = this.getRadiusScheme();
@@ -178,7 +171,8 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Initialize D3 simulation
+   * Sets up SVG with zoom layer, creates D3 force simulation with all forces,
+   * and attaches tick handler to re-render nodes/links/enclosures on each frame.
    */
   private initSimulation() {
     const el = this.container.nativeElement;
@@ -234,7 +228,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Update link rendering
+   * Renders/updates link lines with color based on coupling intensity.
    */
   private updateLinksForView(layer: any) {
     layer.selectAll('line')
@@ -250,7 +244,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Update node rendering
+   * Renders/updates node circles with labels, drag behavior, and click handler.
    */
   private updateNodes(layer: any) {
     const nodeSel = layer.selectAll('g.node')
@@ -293,7 +287,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Create cluster force - keeps nodes grouped by parent
+   * Custom force: pulls sibling nodes (same parentId) toward their centroid.
    */
   private forceCluster(strength: number) {
     return (alpha: number) => {
@@ -316,7 +310,8 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Create enclosure force - keeps children inside parent bubbles
+   * Custom force: leash force pulls descendant nodes inside their enclosure bubble;
+   * push force pushes non-descendants outside.
    */
   private forceEnclosure() {
     return (alpha: number) => {
@@ -356,7 +351,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Calculate enclosures for all expanded nodes
+   * Uses d3.packEnclose to compute minimum bounding circles around direct children of expanded nodes.
    */
   protected calculateEnclosures(): Enclosure[] {
     const enclosures: Enclosure[] = [];
@@ -384,7 +379,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Check if nodeId is a descendant of ancestorId
+   * Walks the parent chain from nodeId upward; returns true if ancestorId is found.
    */
   protected isDescendant(nodeId: string, ancestorId: string): boolean {
     let curr = this.allNodesMap.get(nodeId);
@@ -396,7 +391,9 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Update links based on visible nodes
+   * Filters allLinks to only those between visible nodes.
+   * If a link endpoint is hidden, walks up to find the nearest visible ancestor.
+   * Aggregates parallel links by summing their value.
    */
   protected rebuildLinks() {
     const visibleNodeIds = new Set(this.nodes.map(n => n.id));
@@ -435,7 +432,8 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle node selection from tree modal
+   * Toggles node visibility from the tree modal. Hides/shows the node and its descendants,
+   * then restarts the simulation to re-layout.
    */
   onNodeSelected(nodeId: string): void {
     const hidden = new Set(this.hiddenNodes());
@@ -459,7 +457,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle node click - expand or collapse
+   * Expands a node by replacing it with its children at the same position.
    */
   protected handleNodeClick(event: MouseEvent, node: RenderNode) {
     const original = this.allNodesMap.get(node.id);
@@ -477,7 +475,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Collapse a node
+   * Collapses expanded children back into the parent node at the enclosure center.
    */
   protected collapse(parentId: string) {
     this.expandedNodes.delete(parentId);
@@ -493,7 +491,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Update simulation state (links and restart)
+   * Rebuilds links and restarts the simulation with updated node/link data.
    */
   protected updateSimulationState() {
     this.rebuildLinks();
@@ -503,7 +501,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Shorten line from source to target to account for node radius
+   * Truncates the line at the target's edge so the arrowhead doesn't overlap the circle.
    */
   protected shortenLine(source: any, target: any) {
     const dx = target.x - source.x;
@@ -523,7 +521,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Draw enclosure bubbles
+   * Renders/updates enclosure (parent) bubbles with dashed stroke, label, and collapse-on-click.
    */
   protected drawEnclosures(layer: any, enclosures: Enclosure[]) {
     const sel = layer.selectAll('g.enclosure')
@@ -564,14 +562,14 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get link color based on coupling intensity
+   * Blends color from mid to red based on link value (capped at 10).
    */
   protected getLinkColor(value: number): string {
     return D3ColorUtils.blendColors(D3_CONFIG.LINK.COLOR_MID, '#ef4444', Math.min(value / 10, 1));
   }
 
   /**
-   * Update arrow markers dynamically
+   * Creates/updates SVG marker definitions for arrowheads matching link colors.
    */
   private updateArrowMarkers() {
     if (!this.links || this.links.length === 0) return;
@@ -597,7 +595,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Expand all nodes gradually
+   * Expands every expandable node in batches (5 per 500ms) for animated reveal.
    */
   expandAll() {
     const nodesToExpand: string[] = [];
@@ -646,7 +644,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Collapse all nodes back to root
+   * Collapses every expanded node in reverse-depth order (deepest first) in batches.
    */
   collapseAll() {
     const toCollapse = Array.from(this.expandedNodes).sort((a, b) => {
@@ -674,7 +672,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get node depth in hierarchy
+   * Counts parent chain length from nodeId to root.
    */
   protected getNodeDepth(nodeId: string): number {
     let depth = 0;
@@ -687,7 +685,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle separation slider change
+   * Reads a slider value and applies it as the separation multiplier.
    */
   onSeparationChange(event: Event): void {
     const factor = parseFloat((event.target as HTMLInputElement).value);
@@ -696,7 +694,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Update separation forces
+   * Scales charge, link distance, and collide padding by factor and restarts simulation.
    */
   private updateSeparation(factor: number): void {
     if (!this.simulation) return;

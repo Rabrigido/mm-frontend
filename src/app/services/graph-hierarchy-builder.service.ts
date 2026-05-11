@@ -14,7 +14,8 @@ import { GraphNode, GraphLink } from '../types/graph.types';
 export class GraphHierarchyBuilderService {
   /**
    * Builds the complete node hierarchy from raw metrics data.
-   * Returns nodesMap for link builders to reference.
+   * Pipeline: directories/files -> classes/methods -> standalone functions.
+   * Returns a Map of nodeId -> GraphNode for O(1) lookups by link builders.
    */
   buildHierarchy(data: any): Map<string, GraphNode> {
     const nodesMap = new Map<string, GraphNode>();
@@ -32,8 +33,8 @@ export class GraphHierarchyBuilderService {
   }
 
   /**
-   * Creates DIRECTORY and FILE nodes from file paths.
-   * Also creates file dependency links.
+   * Splits file paths into directory/file hierarchy.
+   * Creates DIRECTORY nodes for each path segment and FILE nodes at leaf level.
    */
   private buildDirectories(data: any, nodesMap: Map<string, GraphNode>): void {
     let filePaths: string[] = [];
@@ -97,8 +98,9 @@ export class GraphHierarchyBuilderService {
   }
 
   /**
-   * Creates CLASS and METHOD nodes from class metrics.
-   * Returns classToFilesMap for link builders to handle duplicate class names.
+   * Creates CLASS and METHOD nodes from class-per-file metrics.
+   * Node ID format: "filePath::ClassName", methods: "filePath::ClassName::methodName".
+   * Returns a map of className -> filePaths[] for resolving duplicate class names across files.
    */
   buildClassesAndMethods(data: any, nodesMap: Map<string, GraphNode>): Map<string, string[]> {
     const classesObj = data.classes?.result || {};
@@ -165,16 +167,16 @@ export class GraphHierarchyBuilderService {
   }
 
   /**
-   * Builds CLASS nodes only (without methods).
-   * Used internally by buildHierarchy.
+   * Wrapper that calls buildClassesAndMethods. Builds CLASS + METHOD nodes.
    */
   private buildClasses(data: any, nodesMap: Map<string, GraphNode>): void {
     this.buildClassesAndMethods(data, nodesMap);
   }
 
   /**
-   * Creates FUNCTION nodes for standalone functions (not in classes).
-   * Returns functionToFileMap for link builders.
+   * Creates FUNCTION nodes for standalone (non-class) functions.
+   * Detects class-method naming conventions to attach to the right parent.
+   * Returns a map of functionName -> filePath for cross-file link resolution.
    */
   buildStandaloneFunctions(data: any, nodesMap: Map<string, GraphNode>): Map<string, string> {
     const funcsObj = data.funcs?.result || {};

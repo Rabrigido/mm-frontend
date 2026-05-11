@@ -15,8 +15,8 @@ import { GraphNode, GraphLink } from '../types/graph.types';
 @Injectable({ providedIn: 'root' })
 export class GraphLinkAggregatorService {
   /**
-   * Builds all links at all levels.
-   * Returns links array to be added to HierarchicalData.
+   * Builds all links at all hierarchy levels (file dependency + method/function/class/file coupling).
+   * Pipeline: file deps -> method coupling -> function coupling -> class aggregation -> file aggregation.
    */
   buildAllLinks(
     data: any,
@@ -48,8 +48,8 @@ export class GraphLinkAggregatorService {
   }
 
   /**
-   * Builds FILE-level dependency links from file imports.
-   * These represent direct file-to-file dependencies.
+   * Creates DEPENDENCY-type links from import data.
+   * One link per import between source and target file.
    */
   private buildFileDependencies(
     data: any,
@@ -73,8 +73,8 @@ export class GraphLinkAggregatorService {
   }
 
   /**
-   * Builds METHOD-level coupling from method metrics.
-   * These are typically aggregated up to CLASS level.
+   * Creates CALL-type links from method-level fan-in/fan-out metrics.
+   * Normalizes constructor names, maps class names to files, and builds src->target links.
    */
   private buildMethodLevelCoupling(
     data: any,
@@ -178,8 +178,8 @@ export class GraphLinkAggregatorService {
   }
 
   /**
-   * Builds FUNCTION-level coupling from function metrics.
-   * These are typically aggregated up to CLASS or FILE level.
+   * Creates CALL-type links from standalone function fan-in/fan-out metrics.
+   * Maps function names to their containing files for cross-file references.
    */
   private buildFunctionLevelCoupling(
     fnCoupling: any,
@@ -243,8 +243,8 @@ export class GraphLinkAggregatorService {
   }
 
   /**
-   * Aggregates method and function coupling UP to CLASS level.
-   * Deduplicates multiple methods calling same class.
+   * Aggregates method + function CALL links into COUPLING-type links at CLASS level.
+   * Also adds direct class-coupling metrics from backend. Deduplicates multi-method calls.
    */
   private buildClassLevelCoupling(
     methodLinks: Map<string, { count: number; direction: 'fan-out' | 'fan-in' }>,
@@ -377,8 +377,8 @@ export class GraphLinkAggregatorService {
   }
 
   /**
-   * Aggregates class and function coupling UP to FILE level.
-   * Creates file-level dependencies.
+   * Aggregates class + function COUPLING links into DEPENDENCY-type links at FILE level.
+   * Standalone functions are promoted to their parent file for inter-file links.
    */
   private buildFileLevelCoupling(
     classLinks: Map<string, { count: number; direction: 'fan-out' | 'fan-in' }>,
