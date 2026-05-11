@@ -5,7 +5,7 @@
  * Subclasses override physics config, colors, radii, and node filtering via abstract methods.
  */
 
-import { Component, ElementRef, Input, OnInit, OnDestroy, ViewChild, inject, signal } from '@angular/core';
+import { Component, ElementRef, Input, Output, EventEmitter, OnInit, OnDestroy, ViewChild, inject, signal } from '@angular/core';
 import * as d3 from 'd3';
 import { D3_CONFIG, D3ColorUtils } from '../config/d3-config';
 import { GraphDataService } from '../services/graph-data.service';
@@ -79,6 +79,7 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
   protected dataService = inject(GraphDataService);
 
   @Input({ required: true }) repoId!: string;
+  @Output() openDetailsModal = new EventEmitter<void>();
   @ViewChild('graphContainer', { static: true }) container!: ElementRef;
 
   // State signals
