@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ChartRendererService } from '../../services/chart-renderer.service';
+import { ChartRendererService } from '../../../services/chart-renderer.service';
 
 /**
  * Displays and manages metric selection tabs and chart rendering.
