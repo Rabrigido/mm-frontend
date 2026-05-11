@@ -60,12 +60,22 @@ export const colors = {
     muted: 'border-gray-300',
   },
 
-  // Visualization/Graph Colors
+  // Visualization/Graph Colors (Tailwind classes)
   visualization: {
     folder: 'bg-amber-500',
     file: 'bg-slate-500',
     class: 'bg-pink-500',
     function: 'bg-emerald-500',
+  },
+
+  // Visualization/Graph Colors (hex values for D3/SVG rendering)
+  visualizationHex: {
+    DIRECTORY: '#f59e0b',
+    FILE: '#64748b',
+    CLASS: '#ec4899',
+    FUNCTION: '#10b981',
+    METHOD: '#10b981',
+    MODULE: '#6366f1',
   },
 
   // Overlay/Alert Colors

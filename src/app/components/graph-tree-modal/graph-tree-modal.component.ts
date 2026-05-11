@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GraphNode, NodeType } from '../../types/graph.types';
-import { graphs } from '../../design-system';
+import { graphs, colors } from '../../design-system';
 
 /** A flattened tree item used for rendering the hierarchical list. */
 interface TreeItem {
@@ -9,15 +9,6 @@ interface TreeItem {
   depth: number;
   hasChildren: boolean;
 }
-
-/** Color map for tree item dots by node type. */
-const NODE_COLORS: Record<NodeType, string> = {
-  DIRECTORY: '#f59e0b',
-  FILE: '#64748b',
-  CLASS: '#ec4899',
-  FUNCTION: '#10b981',
-  METHOD: '#10b981',
-};
 
 /** Material icon names by node type. */
 const NODE_ICONS: Record<NodeType, string> = {
@@ -110,7 +101,7 @@ export class GraphTreeModalComponent {
     }
   }
 
-  getNodeColor(type: NodeType): string { return NODE_COLORS[type] || '#999'; }
+  getNodeColor(type: string): string { return (colors.visualizationHex as Record<string, string>)[type] || '#999'; }
   isNodeHidden(id: string): boolean { return this.hiddenNodeIds.has(id); }
 
   toggleExpand(id: string): void {

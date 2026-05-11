@@ -43,16 +43,10 @@ export class ModuleClassGraphComponent extends BaseGraphComponent {
   }
 
   /**
-   * Color scheme: same as hierarchical
+   * Color scheme: centralized in design system
    */
   override getColorScheme(): Record<string, string> {
-    return {
-      DIRECTORY: '#f59e0b', // Amber
-      FILE: '#64748b',      // Slate
-      CLASS: '#ec4899',     // Pink
-      FUNCTION: '#10b981',  // Emerald
-      MODULE: '#6366f1'     // Fallback
-    };
+    return { ...colors.visualizationHex };
   }
 
   /**

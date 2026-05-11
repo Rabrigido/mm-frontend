@@ -4,6 +4,8 @@
  * Ensures consistent physics, layout, and visual behavior across all graphs
  */
 
+import { colors } from '../design-system';
+
 export const D3_CONFIG = {
   // Viewport
   VIEWPORT: {
@@ -61,12 +63,7 @@ export const D3_CONFIG = {
   // Node visualization
   NODE: {
     STROKE_WIDTH: 2,
-    COLOR: {
-      DIRECTORY: '#f59e0b', // Amber
-      FILE: '#64748b', // Slate
-      CLASS: '#ec4899', // Pink
-      FUNCTION: '#8b5cf6', // Violet
-    },
+    COLOR: { ...colors.visualizationHex },
   },
 };
 
