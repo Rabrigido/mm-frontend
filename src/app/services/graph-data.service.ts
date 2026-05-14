@@ -43,16 +43,9 @@ export class GraphDataService {
    * 4-step pipeline: build hierarchy -> class mapping -> function mapping -> build links.
    */
   private buildGraph(data: any): HierarchicalData {
-    // 1. Build node hierarchy
-    const nodesMap = this.hierarchyBuilder.buildHierarchy(data);
+    const { nodesMap, classToFilesMap, functionToFileMap } =
+      this.hierarchyBuilder.buildHierarchy(data);
 
-    // 2. Build class/method mappings (for link aggregation)
-    const classToFilesMap = this.hierarchyBuilder.buildClassesAndMethods(data, nodesMap);
-
-    // 3. Build function mappings (for link aggregation)
-    const functionToFileMap = this.hierarchyBuilder.buildStandaloneFunctions(data, nodesMap);
-
-    // 4. Build all links at all hierarchy levels
     const links = this.linkAggregator.buildAllLinks(data, nodesMap, classToFilesMap, functionToFileMap);
 
     return { nodes: Array.from(nodesMap.values()), links };

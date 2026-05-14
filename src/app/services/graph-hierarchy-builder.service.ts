@@ -15,21 +15,25 @@ export class GraphHierarchyBuilderService {
   /**
    * Builds the complete node hierarchy from raw metrics data.
    * Pipeline: directories/files -> classes/methods -> standalone functions.
-   * Returns a Map of nodeId -> GraphNode for O(1) lookups by link builders.
+   * Returns the node map plus class and function lookup maps for link aggregation.
    */
-  buildHierarchy(data: any): Map<string, GraphNode> {
+  buildHierarchy(data: any): {
+    nodesMap: Map<string, GraphNode>;
+    classToFilesMap: Map<string, string[]>;
+    functionToFileMap: Map<string, string>;
+  } {
     const nodesMap = new Map<string, GraphNode>();
 
     // 1. Build directory and file structure
     this.buildDirectories(data, nodesMap);
 
-    // 2. Build class hierarchy
-    this.buildClasses(data, nodesMap);
+    // 2. Build class hierarchy and get class-to-file map
+    const classToFilesMap = this.buildClassesAndMethods(data, nodesMap);
 
-    // 3. Build standalone functions
-    this.buildStandaloneFunctions(data, nodesMap);
+    // 3. Build standalone functions and get function-to-file map
+    const functionToFileMap = this.buildStandaloneFunctions(data, nodesMap);
 
-    return nodesMap;
+    return { nodesMap, classToFilesMap, functionToFileMap };
   }
 
   /**
@@ -164,13 +168,6 @@ export class GraphHierarchyBuilderService {
     });
 
     return classToFilesMap;
-  }
-
-  /**
-   * Wrapper that calls buildClassesAndMethods. Builds CLASS + METHOD nodes.
-   */
-  private buildClasses(data: any, nodesMap: Map<string, GraphNode>): void {
-    this.buildClassesAndMethods(data, nodesMap);
   }
 
   /**
