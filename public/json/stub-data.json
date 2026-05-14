@@ -1,0 +1,1499 @@
+{
+  "repos": [
+    {
+      "id": "09b6bf61-5cd6-45c4-bf29-62c0c501f0cd",
+      "name": "coupling-test",
+      "fullName": "coupling-test",
+      "codePath": "/repos/coupling-test",
+      "scannedAt": "2026-05-11T06:20:58.845Z",
+      "stats": {
+        "files": 6,
+        "lines": 207,
+        "byExtension": {
+          ".js": 6
+        },
+        "imports": 4,
+        "exports": 24
+      }
+    }
+  ],
+  "scanResult": {
+    "repoId": "09b6bf61-5cd6-45c4-bf29-62c0c501f0cd",
+    "scannedAt": "2026-05-11T06:20:58.845Z",
+    "codePath": "/repos/coupling-test",
+    "stats": {
+      "files": 6,
+      "lines": 207,
+      "byExtension": {
+        ".js": 6
+      },
+      "imports": 4,
+      "exports": 24
+    },
+    "modularityMetrics": {
+      "files": {
+        "name": "Files on Repository",
+        "description": "Collects and records all source files in the repository by their path.",
+        "result": [
+          "coupling-test/module-a/controller.js",
+          "coupling-test/module-a/view.js",
+          "coupling-test/module-b/logic.js",
+          "coupling-test/module-b/service.js",
+          "coupling-test/module-c/database.js",
+          "coupling-test/module-c/utils.js"
+        ],
+        "status": true
+      },
+      "classes-per-file": {
+        "name": "Classes Per File",
+        "description": "Analyzes each source file to identify and record all top-level classes defined",
+        "result": {
+          "coupling-test/module-a/controller.js": {
+            "UserController": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "handleRequest"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ],
+            "AdminController": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "handleAdmin"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ]
+          },
+          "coupling-test/module-a/view.js": {
+            "UserView": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "render"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ],
+            "DashboardView": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "renderDashboard"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ]
+          },
+          "coupling-test/module-b/logic.js": {
+            "Calculator": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "calculate"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ],
+            "Formatter": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "format"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ]
+          },
+          "coupling-test/module-b/service.js": {
+            "UserService": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "getUser"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ],
+            "AuthService": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "authenticate"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ]
+          },
+          "coupling-test/module-c/database.js": {
+            "DBConnection": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "connect"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ],
+            "QueryBuilder": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "buildQuery"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ]
+          },
+          "coupling-test/module-c/utils.js": {
+            "Logger": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "log"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ],
+            "MathHelper": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "add"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                }
+              }
+            ]
+          }
+        },
+        "status": true
+      },
+      "class-coupling": {
+        "name": "Class Coupling",
+        "description": "Analyzes coupling between classes by tracking method-level fan-in and fan-out",
+        "result": {
+          "coupling-test/module-a/controller.js": {
+            "UserController": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {
+                  "UserService": {
+                    "getUser": 1
+                  }
+                },
+                "fan-in": {}
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "handleRequest"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              }
+            ],
+            "AdminController": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "handleAdmin"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              }
+            ]
+          },
+          "coupling-test/module-a/view.js": {
+            "UserView": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {
+                  "UserController": {
+                    "handleRequest": 1
+                  }
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "render"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {
+                  "Formatter": {
+                    "format": 1
+                  }
+                },
+                "fan-in": {}
+              }
+            ],
+            "DashboardView": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "renderDashboard"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              }
+            ]
+          },
+          "coupling-test/module-b/logic.js": {
+            "Calculator": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {
+                  "DBConnection": {
+                    "connect": 1
+                  }
+                },
+                "fan-in": {}
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "calculate"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              }
+            ],
+            "Formatter": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {
+                  "UserView": {
+                    "render": 1
+                  }
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "format"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              }
+            ]
+          },
+          "coupling-test/module-b/service.js": {
+            "UserService": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {
+                  "UserController": {
+                    "constructor": 1
+                  }
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "getUser"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {
+                  "DBConnection": {
+                    "connect": 1
+                  }
+                },
+                "fan-in": {}
+              }
+            ],
+            "AuthService": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "authenticate"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              }
+            ]
+          },
+          "coupling-test/module-c/database.js": {
+            "DBConnection": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {
+                  "Calculator": {
+                    "constructor": 1
+                  },
+                  "UserService": {
+                    "getUser": 1
+                  }
+                }
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "connect"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              }
+            ],
+            "QueryBuilder": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "buildQuery"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              }
+            ]
+          },
+          "coupling-test/module-c/utils.js": {
+            "Logger": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "log"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              }
+            ],
+            "MathHelper": [
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "constructor"
+                },
+                "computed": false,
+                "kind": "constructor",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              },
+              {
+                "type": "ClassMethod",
+                "static": false,
+                "key": {
+                  "type": "Identifier",
+                  "name": "add"
+                },
+                "computed": false,
+                "kind": "method",
+                "id": null,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "body": []
+                },
+                "fan-out": {},
+                "fan-in": {}
+              }
+            ]
+          }
+        },
+        "status": true
+      },
+      "functions-per-file": {
+        "name": "Functions Per File",
+        "description": "Analyzes each source file to identify and record all standalone functions defined",
+        "result": {
+          "coupling-test/module-a/controller.js": {
+            "initApp": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "initApp"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            },
+            "shutdownApp": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "shutdownApp"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            }
+          },
+          "coupling-test/module-a/view.js": {
+            "renderPage": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "renderPage"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            },
+            "renderError": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "renderError"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            }
+          },
+          "coupling-test/module-b/logic.js": {
+            "calculateTax": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "calculateTax"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            },
+            "getTimestamp": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "getTimestamp"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            }
+          },
+          "coupling-test/module-b/service.js": {
+            "startService": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "startService"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            },
+            "stopService": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "stopService"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            }
+          },
+          "coupling-test/module-c/database.js": {
+            "connectDB": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "connectDB"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            },
+            "disconnectDB": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "disconnectDB"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            }
+          },
+          "coupling-test/module-c/utils.js": {
+            "formatDate": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "formatDate"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            },
+            "generateId": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "generateId"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            }
+          }
+        },
+        "status": true
+      },
+      "function-coupling": {
+        "name": "Function Coupling",
+        "description": "Analyzes coupling between standalone functions by tracking fan-in and fan-out",
+        "result": {
+          "coupling-test/module-a/controller.js": {
+            "initApp": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "initApp"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {
+                "startService": 1
+              },
+              "fan-in": {}
+            },
+            "shutdownApp": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "shutdownApp"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {
+                "stopService": 1
+              },
+              "fan-in": {}
+            }
+          },
+          "coupling-test/module-a/view.js": {
+            "renderPage": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "renderPage"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {},
+              "fan-in": {}
+            },
+            "renderError": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "renderError"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {},
+              "fan-in": {}
+            }
+          },
+          "coupling-test/module-b/logic.js": {
+            "calculateTax": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "calculateTax"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {
+                "connectDB": 1
+              },
+              "fan-in": {}
+            },
+            "getTimestamp": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "getTimestamp"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {},
+              "fan-in": {}
+            }
+          },
+          "coupling-test/module-b/service.js": {
+            "startService": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "startService"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {
+                "connectDB": 1
+              },
+              "fan-in": {
+                "initApp": 1
+              }
+            },
+            "stopService": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "stopService"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {
+                "disconnectDB": 1
+              },
+              "fan-in": {
+                "shutdownApp": 1
+              }
+            }
+          },
+          "coupling-test/module-c/database.js": {
+            "connectDB": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "connectDB"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {},
+              "fan-in": {
+                "calculateTax": 1,
+                "startService": 1
+              }
+            },
+            "disconnectDB": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "disconnectDB"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {},
+              "fan-in": {
+                "stopService": 1
+              }
+            }
+          },
+          "coupling-test/module-c/utils.js": {
+            "formatDate": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "formatDate"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {},
+              "fan-in": {}
+            },
+            "generateId": {
+              "type": "FunctionDeclaration",
+              "id": {
+                "type": "Identifier",
+                "name": "generateId"
+              },
+              "generator": false,
+              "async": false,
+              "params": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              },
+              "fan-out": {},
+              "fan-in": {}
+            }
+          }
+        },
+        "status": true
+      }
+    }
+  }
+}
