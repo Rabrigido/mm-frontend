@@ -440,10 +440,12 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
     const hidden = new Set(this.hiddenNodes());
     if (hidden.has(nodeId)) {
       hidden.delete(nodeId);
-      // Re-add node if it's now visible
       const nodeData = this.allNodesMap.get(nodeId);
-      if (nodeData) {
-        this.nodes.push(this.createRenderNode(nodeData));
+      if (nodeData && !this.nodes.some(n => n.id === nodeId)) {
+        // Only show root nodes or nodes whose parent is expanded
+        if (!nodeData.parentId || this.expandedNodes.has(nodeData.parentId)) {
+          this.nodes.push(this.createRenderNode(nodeData));
+        }
       }
     } else {
       hidden.add(nodeId);
