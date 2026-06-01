@@ -16,15 +16,21 @@
  -->
 
       <app-hierarchical-graph *ngSwitchCase="'hierarchical-graph'" [repoId]="repo()!.id"
-        (openDetailsModal)="showDetailsModal.set(true)">
+        [reloadTrigger]="scanVersion()"
+        (openDetailsModal)="showDetailsModal.set(true)"
+        (runScan)="runScan()">
       </app-hierarchical-graph>
 
       <app-module-class-graph *ngSwitchCase="'module-class-graph'" [repoId]="repo()!.id"
-        (openDetailsModal)="showDetailsModal.set(true)">
+        [reloadTrigger]="scanVersion()"
+        (openDetailsModal)="showDetailsModal.set(true)"
+        (runScan)="runScan()">
       </app-module-class-graph>
 
       <app-module-function-graph *ngSwitchCase="'module-function-graph'" [repoId]="repo()!.id"
-        (openDetailsModal)="showDetailsModal.set(true)">
+        [reloadTrigger]="scanVersion()"
+        (openDetailsModal)="showDetailsModal.set(true)"
+        (runScan)="runScan()">
       </app-module-function-graph>
 
       <!-- <app-files-metric *ngSwitchCase="'files'" [repoId]="repo()!.id">

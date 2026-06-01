@@ -43,6 +43,7 @@ export class RepoDetailPageComponent implements OnDestroy {
   loading = signal(false);
   error = signal<string | null>(null);
   id = this.route.snapshot.paramMap.get('id')!;
+  scanVersion = signal(0);
 
   @Input() loader?: () => Observable<string[]>;
 
@@ -125,6 +126,7 @@ export class RepoDetailPageComponent implements OnDestroy {
         // Clear previous charts
         this.chartRenderer.disposeAll();
         this.scan.set(res);
+        this.scanVersion.update(v => v + 1);
         this.loading.set(false);
       },
       error: (e) => {

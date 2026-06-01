@@ -5,7 +5,7 @@
  * Subclasses override physics config, colors, radii, and node filtering via abstract methods.
  */
 
-import { Component, ElementRef, Input, Output, EventEmitter, OnInit, OnDestroy, ViewChild, inject, signal } from '@angular/core';
+import { Component, ElementRef, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, ViewChild, inject, signal } from '@angular/core';
 import * as d3 from 'd3';
 import { D3_CONFIG, D3ColorUtils } from '../config/d3-config';
 import { GraphDataService } from '../services/graph-data.service';
@@ -75,11 +75,13 @@ export interface PhysicsConfig {
 @Component({
   template: '', // Subclasses must define template
 })
-export abstract class BaseGraphComponent implements OnInit, OnDestroy {
+export abstract class BaseGraphComponent implements OnInit, OnDestroy, OnChanges {
   protected dataService = inject(GraphDataService);
 
   @Input({ required: true }) repoId!: string;
+  @Input() reloadTrigger = 0;
   @Output() openDetailsModal = new EventEmitter<void>();
+  @Output() runScan = new EventEmitter<void>();
   @ViewChild('graphContainer', { static: true }) container!: ElementRef;
 
   // State signals
@@ -124,6 +126,14 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.simulation) this.simulation.stop();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['reloadTrigger'] && !changes['reloadTrigger'].firstChange) {
+      if (this.simulation) this.simulation.stop();
+      this.allNodesMap.clear();
+      this.loadGraph();
+    }
   }
 
   /**

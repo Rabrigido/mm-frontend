@@ -13,6 +13,7 @@
   (downloadPNG)="downloadPNG()"
   (openTreeModal)="showTreeModal.set(true)"
   (openDetailsModal)="openDetailsModal.emit()"
+  (runScan)="runScan.emit()"
   (treeNodeSelected)="onNodeSelected($event)"
   (closeTreeModal)="showTreeModal.set(false)">
   <div #graphContainer [class]="graphs.container.inner"></div>

@@ -32,6 +32,7 @@ export class GraphWrapperComponent implements OnDestroy {
   @Output() downloadPNG = new EventEmitter<void>();
   @Output() openTreeModal = new EventEmitter<void>();
   @Output() openDetailsModal = new EventEmitter<void>();
+  @Output() runScan = new EventEmitter<void>();
   @Output() treeNodeSelected = new EventEmitter<string>();
   @Output() closeTreeModal = new EventEmitter<void>();
 
