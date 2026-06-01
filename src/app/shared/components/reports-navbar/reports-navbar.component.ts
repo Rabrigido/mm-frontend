@@ -1,11 +1,14 @@
 import { Component, EventEmitter, Input, Output, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { NgFor, NgClass } from '@angular/common';
+import { components, colors, spacing } from '../../../design-system';
 
+/** Available graph report types. */
 export type ReportKey =
   | 'hierarchical-graph'
   | 'module-class-graph'
   | 'module-function-graph'; 
 
+/** Describes a selectable report in the navigation bar. */
 export interface ReportItem {
   key: ReportKey;
   label: string;
@@ -18,7 +21,14 @@ export interface ReportItem {
   imports: [NgFor, NgClass],
   templateUrl: './reports-navbar.component.html',
 })
+/**
+ * Navigation bar for switching between graph report views (toggle-style buttons).
+ */
 export class ReportsNavbarComponent implements OnChanges {
+  // Design System
+  components = components;
+  colors = colors;
+  spacing = spacing;
   @Input() items: ReportItem[] = [
   
     { key: 'hierarchical-graph', label: 'Project summary' },  
@@ -42,6 +52,7 @@ export class ReportsNavbarComponent implements OnChanges {
     return this.selectedSig();
   }
 
+  /** Toggles report selection (clicking the same item deselects). */
   toggle(k: ReportKey | null): void {
     const next = this.selectedValue() === k ? null : k;
     this.selectedSig.set(next);

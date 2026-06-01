@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReposService } from '../../services/repos.service';
 import { Repo } from '../../models/repo';
+import { components, colors, spacing, typography } from '../../design-system';
 
 @Component({
   selector: 'app-repos-page',
@@ -10,8 +11,17 @@ import { Repo } from '../../models/repo';
   imports: [CommonModule, RouterLink],
   templateUrl: './repos-page.component.html',
 })
+/**
+ * Page listing all repos with add/delete functionality.
+ */
 export class ReposPageComponent {
   private reposService = inject(ReposService);
+
+  // Design System
+  components = components;
+  colors = colors;
+  spacing = spacing;
+  typography = typography;
 
   repos = signal<Repo[] | null>(null);
   loading = signal(false);
@@ -26,9 +36,7 @@ export class ReposPageComponent {
     this.loading.set(true);
     this.error.set(null);
     this.reposService.getRepos().subscribe({
-      next: (data) => {
-        console.log(data);
-        this.repos.set(data); this.loading.set(false); },
+      next: (data) => { this.repos.set(data); this.loading.set(false); },
       error: (e) => { this.error.set(e?.message ?? 'Error cargando repos'); this.loading.set(false); }
     });
   }

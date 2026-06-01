@@ -1,91 +1,20 @@
-<div class="w-full h-[800px] bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden">
-
-  <!-- Graph Container -->
-  <div #graphContainer class="w-full h-full absolute inset-0"></div>
-
-  <!-- Legend / Instructions -->
-  <div
-    class="absolute top-4 left-4 bg-white/90 backdrop-blur p-4 rounded-lg shadow-md text-sm border border-slate-100 max-w-xs z-10">
-    <h3 class="font-bold text-slate-800 mb-2">Interactive Dependency Graph</h3>
-
-    <div class="space-y-2">
-      <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-amber-500"></span>
-        <span class="text-slate-600">Folder</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-slate-500"></span>
-        <span class="text-slate-600">File</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-pink-500"></span>
-        <span class="text-slate-600">Class</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-        <span class="text-slate-600">Function</span>
-      </div>
-    </div>
-
-    <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 space-y-1">
-      <p>👉 <strong>Click a node</strong> to drill down (Expand).</p>
-      <p>👉 <strong>Click a dashed circle</strong> to go up (Collapse).</p>
-      <p>🖐 <strong>Drag</strong> to rearrange nodes.</p>
-      <p>🔍 <strong>Scroll</strong> to zoom in/out.</p>
-    </div>
-
-    <div class="mt-4 pt-3 border-t border-slate-100">
-      <div class="flex items-center justify-between mb-1.5">
-        <span class="text-xs font-medium text-slate-600">Node spacing</span>
-        <span class="text-xs font-mono text-slate-400">{{ separation() }}×</span>
-      </div>
-      <input type="range" min="0.5" max="4" step="0.1" [value]="separation()"
-        (input)="onSeparationChange($event)"
-        class="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-indigo-500 bg-slate-200">
-      <div class="flex justify-between text-[10px] text-slate-400 mt-1">
-        <span>Compact</span>
-        <span>Spread</span>
-      </div>
-    </div>
-
-    <!-- <div class="mt-4 pt-3 border-t border-slate-100 flex gap-2">
-      <button (click)="expandAll()"
-        class="flex-1 px-3 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition-colors">
-        Expand All
-      </button>
-      <button (click)="collapseAll()"
-        class="flex-1 px-3 py-2 bg-slate-400 text-white text-xs font-semibold rounded hover:bg-slate-500 transition-colors">
-        Collapse All
-      </button>
-    </div> -->
-  </div>
-
-  <!-- Download Actions -->
-  <div class="absolute top-4 right-4 flex flex-col gap-2 z-10">
-    <button (click)="downloadSVG()" title="Download SVG"
-      class="px-3 py-2 bg-white/90 backdrop-blur border border-slate-200 rounded-lg shadow-md text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1.5">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-      </svg>
-      SVG
-    </button>
-    <button (click)="downloadPNG()" title="Download PNG"
-      class="px-3 py-2 bg-white/90 backdrop-blur border border-slate-200 rounded-lg shadow-md text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1.5">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-      </svg>
-      PNG
-    </button>
-  </div>
-
-</div>
-<div *ngIf="loading()" class="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-50">
-  <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-  <span class="text-indigo-600 font-medium">Calculating Layout...</span>
-</div>
-
-<!-- Error State -->
-<div *ngIf="error()" class="absolute inset-0 flex items-center justify-center bg-red-50/90 z-50 text-red-600">
-  {{ error() }}
-</div>
-
+<app-graph-wrapper
+  [legendItems]="legendItems"
+  [loading]="loading()"
+  [error]="error()"
+  [separation]="separation()"
+  [showTreeModal]="showTreeModal()"
+  [allNodes]="allNodes"
+  [hiddenNodes]="hiddenNodes()"
+  (separationChange)="separation.set($event); updateSeparation($event)"
+  (expandAll)="expandAll()"
+  (collapseAll)="collapseAll()"
+  (downloadSVG)="downloadSVG()"
+  (downloadPNG)="downloadPNG()"
+  (openTreeModal)="showTreeModal.set(true)"
+  (openDetailsModal)="openDetailsModal.emit()"
+  (runScan)="runScan.emit()"
+  (treeNodeSelected)="onNodeSelected($event)"
+  (closeTreeModal)="showTreeModal.set(false)">
+  <div #graphContainer [class]="graphs.container.inner"></div>
+</app-graph-wrapper>

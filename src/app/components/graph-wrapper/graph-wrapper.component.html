@@ -1,0 +1,107 @@
+<div [class]="graphs.container.main">
+
+  <ng-content></ng-content>
+
+  <div [class]="graphs.legend.container + ' transition-opacity duration-500'"
+    [class.opacity-0]="isIdle()"
+    [class.pointer-events-none]="isIdle()">
+    <h3 *ngIf="title" [class]="graphs.legend.title">{{ title }}</h3>
+
+    <div [class]="graphs.legend.itemsContainer">
+      <div *ngFor="let item of legendItems" [class]="graphs.legend.item">
+        <span [class]="item.colorClass"></span>
+        <span [class]="graphs.legend.label">{{ item.label }}</span>
+      </div>
+    </div>
+
+    <div [class]="graphs.legend.divider">
+      <p>👉 <strong>Click a node</strong> to drill down (Expand).</p>
+      <p>👉 <strong>Click a dashed circle</strong> to go up (Collapse).</p>
+      <p>🖐 <strong>Drag</strong> to rearrange nodes.</p>
+      <p>🔍 <strong>Scroll</strong> to zoom in/out.</p>
+    </div>
+
+    <div [class]="graphs.legend.controlGroup">
+      <div [class]="graphs.slider.label">
+        <span [class]="graphs.slider.labelText">Node spacing</span>
+        <span [class]="graphs.slider.labelValue">{{ separation }}×</span>
+      </div>
+      <input type="range" min="0.5" max="4" step="0.1" [value]="separation"
+        (input)="onSeparationChange($event)"
+        [class]="graphs.slider.input">
+      <div [class]="graphs.slider.range">
+        <span>Compact</span>
+        <span>Spread</span>
+      </div>
+    </div>
+
+    <div [class]="graphs.buttonGroup.container">
+      <button (click)="expandAll.emit()"
+        [class]="graphs.buttonGroup.button + ' ' + graphs.buttonGroup.expand">
+        Expand All
+      </button>
+      <button (click)="collapseAll.emit()"
+        [class]="graphs.buttonGroup.button + ' ' + graphs.buttonGroup.collapse">
+        Collapse All
+      </button>
+    </div>
+  </div>
+
+  <div [class]="graphs.actions.container + ' transition-opacity duration-500'"
+    [class.opacity-0]="isIdle()"
+    [class.pointer-events-none]="isIdle()">
+    <button (click)="downloadSVG.emit()" title="Download SVG"
+      [class]="graphs.actions.button">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+      </svg>
+      SVG
+    </button>
+    <button (click)="downloadPNG.emit()" title="Download PNG"
+      [class]="graphs.actions.button">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+      </svg>
+      PNG
+    </button>
+    <button (click)="openTreeModal.emit()" title="Browse entities"
+      [class]="graphs.actions.button">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+      Tree
+    </button>
+    <button (click)="runScan.emit()" title="Run scanner"
+      [class]="graphs.actions.button">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      </svg>
+      Scan
+    </button>
+    <button (click)="openDetailsModal.emit()" title="Repository details"
+      [class]="graphs.actions.button">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      Details
+    </button>
+  </div>
+
+</div>
+
+<div *ngIf="loading" [class]="graphs.state.loading.overlay">
+  <div [class]="graphs.state.loading.spinner"></div>
+  <span [class]="graphs.state.loading.text">Calculating Layout...</span>
+</div>
+
+<div *ngIf="error" [class]="graphs.state.error.overlay">
+  {{ error }}
+</div>
+
+<app-graph-tree-modal
+  [isOpen]="showTreeModal"
+  [nodes]="allNodes"
+  [hiddenNodeIds]="hiddenNodes"
+  (nodeSelected)="treeNodeSelected.emit($event)"
+  (close)="closeTreeModal.emit()">
+</app-graph-tree-modal>
