@@ -47,8 +47,7 @@ export class ModuleClassGraphComponent extends BaseGraphComponent {
       DIRECTORY: 35,
       FILE: 20,
       CLASS: 12,
-      FUNCTION: 6,
-      MODULE: 20
+      FUNCTION: 6
     };
   }
 
@@ -92,6 +91,15 @@ export class ModuleClassGraphComponent extends BaseGraphComponent {
     const visibleNodeMap = new Map(this.nodes.map(n => [n.id, n]));
     const newLinks = new Map<string, any>();
 
+    // Determine view level: when only DIRECTORY nodes are visible,
+    // show deduplicated module-level links. Once any non-directory
+    // (FILE/CLASS/FUNCTION) appears, show file-level links.
+    const isModuleView = this.nodes.every(n => n.type === 'DIRECTORY');
+
+    const activeLinks = isModuleView
+      ? this.allLinks.filter(l => l.level === 'module')
+      : this.allLinks.filter(l => !l.level || l.level === 'file');
+
     const findVisible = (id: string): string | undefined => {
       if (visibleNodeIds.has(id)) return id;
       let curr = this.allNodesMap.get(id);
@@ -102,20 +110,21 @@ export class ModuleClassGraphComponent extends BaseGraphComponent {
       return undefined;
     };
 
-    this.allLinks.forEach(l => {
+    activeLinks.forEach(l => {
       const sourceId = findVisible(l.source as string);
       const targetId = findVisible(l.target as string);
       if (sourceId && targetId && sourceId !== targetId) {
-        const key = `${sourceId}->${targetId}`;
+        const key = `${sourceId}-${l.type}-${targetId}`;
         const couplingValue = (l.fanIn ?? 0) + (l.fanOut ?? 0);
         if (!newLinks.has(key)) {
           newLinks.set(key, {
             source: visibleNodeMap.get(sourceId)!,
             target: visibleNodeMap.get(targetId)!,
-            value: couplingValue || l.value || 1,
+            value: isModuleView ? l.value : (couplingValue || l.value || 1),
+            type: l.type
           });
         } else {
-          newLinks.get(key)!.value += couplingValue || l.value || 1;
+          newLinks.get(key)!.value += isModuleView ? l.value : (couplingValue || l.value || 1);
         }
       }
     });
