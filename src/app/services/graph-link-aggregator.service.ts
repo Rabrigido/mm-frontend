@@ -4,12 +4,13 @@ import { GraphNode, GraphLink } from '../types/graph.types';
 /**
  * Aggregates coupling/dependency links at different levels of the hierarchy.
  * 
- * Link building process:
- * 1. Method-level coupling (from method metrics)
- * 2. Function-level coupling (from function metrics)
- * 3. Class-level aggregation (methods -> classes)
- * 4. File-level aggregation (classes + functions -> files)
- * 
+ * Link building pipeline (in buildAllLinks):
+ * 0. File-level DEPENDENCY links  — from file-coupling fanOut (imports)
+ * 1. Method-level CALL links      — from class-coupling method fan-out/fan-in
+ * 2. Function-level CALL links    — from function-coupling fan-out/fan-in
+ * 3. Class-level COUPLING links   — aggregated from method + function calls
+ * 4. Module-level DEPENDENCY links — deduplicated by parent directory
+ *
  * This service focuses purely on LINK CREATION AND AGGREGATION.
  */
 @Injectable({ providedIn: 'root' })
