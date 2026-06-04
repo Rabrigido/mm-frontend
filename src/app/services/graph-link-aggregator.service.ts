@@ -22,12 +22,13 @@ export class GraphLinkAggregatorService {
     data: any,
     nodesMap: Map<string, GraphNode>,
     classToFilesMap: Map<string, string[]>,
-    functionToFileMap: Map<string, string>
+    functionToFileMap: Map<string, string>,
+    fileCoupling?: Record<string, { fanIn: string[]; fanOut: string[] }>
   ): GraphLink[] {
     const links: GraphLink[] = [];
 
-    // 0. File-level dependencies (imports)
-    this.buildFileDependencies(data, nodesMap, links);
+    // 0. File-level dependencies (imports from file-coupling fanOut)
+    this.buildFileDependencies(fileCoupling, nodesMap, links);
 
     // 1. Method-level coupling
     const methodLinks = new Map<string, { count: number; direction: 'fan-out' | 'fan-in' }>();
@@ -41,25 +42,26 @@ export class GraphLinkAggregatorService {
     const classLinks = new Map<string, { count: number; direction: 'fan-out' | 'fan-in' }>();
     this.buildClassLevelCoupling(methodLinks, nodesMap, classLinks, functionLinks, data, classToFilesMap, links);
 
-    // 4. File-level aggregation
-    this.buildFileLevelCoupling(classLinks, nodesMap, functionLinks, links);
+    // 4. Module-level aggregation (deduplicated by parent directory)
+    this.buildModuleLevelCoupling(fileCoupling, nodesMap, links);
 
     return links;
   }
 
   /**
-   * Creates DEPENDENCY-type links from import data.
+   * Creates DEPENDENCY-type links from file-coupling fanOut data.
    * One link per import between source and target file.
    */
   private buildFileDependencies(
-    data: any,
+    fileCoupling: Record<string, { fanIn: string[]; fanOut: string[] }> | undefined,
     nodesMap: Map<string, GraphNode>,
     links: GraphLink[]
   ) {
-    const depGraph = data.dependencies?.graph || {};
-    Object.entries(depGraph).forEach(([src, imports]: [string, any]) => {
+    if (!fileCoupling) return;
+
+    Object.entries(fileCoupling).forEach(([src, coupling]) => {
       if (!nodesMap.has(src)) return;
-      (imports as string[]).forEach(target => {
+      coupling.fanOut.forEach(target => {
         if (nodesMap.has(target) && src !== target) {
           links.push({
             source: src,
@@ -442,8 +444,75 @@ export class GraphLinkAggregatorService {
         source: srcId,
         target: targetId,
         value: linkData.count,
-        type: 'DEPENDENCY',
+        type: 'COUPLING',
         direction: linkData.direction
+      });
+    });
+  }
+
+  /**
+   * Builds module-level DEPENDENCY links from file-coupling data by aggregating
+   * file-to-file imports up to the directory (module) level.
+   *
+   * Deduplication logic: if two files in Module A both import files from Module B,
+   * only one link A→B is created (value = 1). This contrasts with file-level links
+   * where each individual import counts separately.
+   */
+  private buildModuleLevelCoupling(
+    fileCoupling: Record<string, { fanIn: string[]; fanOut: string[] }> | undefined,
+    nodesMap: Map<string, GraphNode>,
+    links: GraphLink[]
+  ): void {
+    if (!fileCoupling) return;
+
+    // Resolve the parent directory (module) ID for a given file path.
+    // Falls back to matching by file name if exact path lookup fails.
+    const getModuleId = (filePath: string): string | undefined => {
+      let node = nodesMap.get(filePath);
+      if (!node) {
+        // Fallback: match by file name (last path segment)
+        const fileName = filePath.split('/').pop() || filePath.split('\\').pop();
+        for (const [, n] of nodesMap) {
+          if (n.type === 'FILE' && n.label === fileName) {
+            node = n;
+            break;
+          }
+        }
+      }
+      if (!node?.parentId) return undefined;
+      // Walk up to find the nearest DIRECTORY ancestor
+      let curr = nodesMap.get(node.parentId);
+      while (curr && curr.type !== 'DIRECTORY') {
+        if (!curr.parentId) return undefined;
+        curr = nodesMap.get(curr.parentId);
+      }
+      return curr?.id;
+    };
+
+    // Track unique (srcModule → tgtModule) pairs for deduplication
+    const modulePairs = new Set<string>();
+
+    for (const [srcFile, data] of Object.entries(fileCoupling)) {
+      const srcModule = getModuleId(srcFile);
+      if (!srcModule) continue;
+
+      for (const tgtFile of data.fanOut) {
+        const tgtModule = getModuleId(tgtFile);
+        if (!tgtModule || srcModule === tgtModule) continue;
+
+        modulePairs.add(`${srcModule}->${tgtModule}`);
+      }
+    }
+
+    // Create one link per unique module pair
+    modulePairs.forEach(pair => {
+      const [srcId, targetId] = pair.split('->');
+      links.push({
+        source: srcId,
+        target: targetId,
+        value: 1,
+        type: 'DEPENDENCY',
+        level: 'module'
       });
     });
   }
