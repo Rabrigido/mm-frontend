@@ -1,53 +1,57 @@
-# Graph Entities Tree Modal Plan
 
-## Objective
-Add a modal inside the graph visualization that shows a hierarchical tree view of all graph components (directories, files, classes, functions/methods). Enables users to browse and explore the codebase entity structure in a tree format alongside the force-directed graph.
+# Feature: Multi-Granularity Dependency Visualization
 
-## Architecture
+## Overview
 
-### New Component
-- **`GraphTreeModalComponent`** (`src/app/components/graph-tree-modal/`)
-  - Self-contained modal + tree view
-  - Receives all graph nodes via `@Input()`
-  - Builds a flat display list from the hierarchy for rendering
-  - Search/filter functionality
-  - Expand/collapse tree branches
-  - Uses existing Tailwind design system patterns
+This feature introduces dynamic dependency graph visualization where "fan-in" (inbound dependencies) and "fan-out" (outbound dependencies) behave differently depending on the architectural level being viewed.
 
-### Modified Components
-1. **`BaseGraphComponent`** — Expose `allNodesMap` as public for template access
-2. **All 3 graph components** — Add import, button, and modal component to each template
+While classes and functions will maintain their classic behavior (tracking direct instantiation and execution calls), Files and Modules will use a specialized import-based connection strategy.
 
-## File Changes
+## Connection Strategies
 
-### New Files (2)
-| File | Purpose |
-|---|---|
-| `src/app/components/graph-tree-modal/graph-tree-modal.component.ts` | Component logic: tree builder, expand/collapse, search filter, modal toggle |
-| `src/app/components/graph-tree-modal/graph-tree-modal.component.html` | Modal overlay + tree view template |
+### 1. Modules (High-Level Granularity)
 
-### Modified Files (7)
-| File | Change |
-|---|---|
-| `src/app/components/base-graph.component.ts` | Change `allNodesMap` from `protected` to `public` |
-| `src/app/components/hierarchical-graph/hierarchical-graph.component.ts` | Import + register component |
-| `src/app/components/hierarchical-graph/hierarchical-graph.component.html` | Add "Tree" button + modal tag |
-| `src/app/components/module-class-graph/module-class-graph.component.ts` | Import + register component |
-| `src/app/components/module-class-graph/module-class-graph.component.html` | Add "Tree" button + modal tag |
-| `src/app/components/module-function-graph/module-function-graph.component.ts` | Import + register component |
-| `src/app/components/module-function-graph/module-function-graph.component.html` | Add "Tree" button + modal tag |
+At the module level, dependencies are deduplicated to show unique relationships between architectural boundaries.
 
-## Commit Strategy
+* **Fan-out:** The number of unique external modules that this module depends on.
+* **Fan-in:** The number of external modules that depend on this module.
 
-### Commit 1: Create GraphTreeModalComponent
-- Create `graph-tree-modal/` directory with `.ts` and `.html` files
-- Full modal + tree view implementation
+### 2. Files (Mid-Level Granularity)
 
-### Commit 2: Expose allNodesMap in BaseGraphComponent
-- Change visibility from `protected` to `public`
+At the file level, dependencies represent the exact number of import statements targeting distinct external assets.
 
-### Commit 3: Add tree modal to all 3 graph components
-- Import component in each `.ts`
-- Add button and modal tag in each `.html`
+* **Fan-out:** The total number of imports made by the file.
+* **Fan-in:** The total number of times this file is imported by others.
+
+### 3. Classes and Functions (Low-Level Granularity)
+
+* Maintains the classic behavior: edges represent direct execution calls (for functions) or object instantiations/inheritance (for classes).
 
  
+
+## Data Source & Implementation
+
+To generate the File and Module graphs, the visualization will consume the pre-calculated `file-coupling` metric data available in the system JSON, you can use file-coupling to determine the module dependencies as a modules / package are a group of files in the same dir, you can use regex also to determine the module level.
+
+### Expected JSON Structure
+
+The parser will analyze the `fanOut` and `fanIn` path arrays to draw the edges and aggregate them for the Module-level view:
+
+```json
+{
+  "name": "File Coupling",
+  "description": "Measures file-level coupling by computing each file’s fan-in (dependent files) and fan-out (dependencies)",
+  "result": {
+    "/path/to/app.ts": {
+      "fanOut": ["/path/to/utils/index.ts"],
+      "fanIn": []
+    },
+    "/path/to/utils/index.ts": {
+      "fanOut": [],
+      "fanIn": ["/path/to/app.ts"]
+    }
+  },
+  "status": true
+}
+
+```
