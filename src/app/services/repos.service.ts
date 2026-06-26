@@ -15,10 +15,15 @@ export class ReposService {
   private base = environment.apiBase;
   private stubs = environment.useStubs;
 
+  private mapStubRepo(r: any): Repo {
+    const name = r.stats?.files ? 'coupling-test' : 'unknown';
+    return { id: r.repoId, name, fullName: name, codePath: r.codePath, scannedAt: r.scannedAt, stats: r.stats };
+  }
+
   getRepos() {
     if (this.stubs) {
       return this.http.get<any>('/json/stub-data.json').pipe(
-        map(data => data.repos as Repo[])
+        map(data => (data.repos ?? []).map((r: any) => this.mapStubRepo(r)))
       );
     }
     return this.http.get<Repo[]>(`${this.base}/repos`);
@@ -27,7 +32,7 @@ export class ReposService {
   getRepo(id: string) {
     if (this.stubs) {
       return this.http.get<any>('/json/stub-data.json').pipe(
-        map(data => (data.repos as Repo[]).find(r => r.id === id)!)
+        map(data => (data.repos ?? []).find((r: any) => r.repoId === id)!)
       );
     }
     return this.http.get<Repo>(`${this.base}/repos/${id}`);
@@ -36,7 +41,7 @@ export class ReposService {
   addRepo(gitUrl: string) {
     if (this.stubs) {
       return this.http.get<any>('/json/stub-data.json').pipe(
-        map(data => (data.repos as Repo[])[0])
+        map(data => this.mapStubRepo((data.repos ?? [])[0]))
       );
     }
     return this.http.post<Repo>(`${this.base}/repos`, { gitUrl });
@@ -50,7 +55,7 @@ export class ReposService {
   scanRepo(id: string) {
     if (this.stubs) {
       return this.http.get<any>('/json/stub-data.json').pipe(
-        map(data => data.scanResult as ScanResult)
+        map(data => (data.repos ?? [])[0] as ScanResult)
       );
     }
     return this.http.post<ScanResult>(`${this.base}/repos/${id}/scan`, {});

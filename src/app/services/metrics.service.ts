@@ -19,7 +19,7 @@ export class MetricsService {
   getMetric(repoId: string, metricName: string): Observable<any> {
     if (this.stubs) {
       return this.http.get<any>('/json/stub-data.json').pipe(
-        map(data => data.modularityMetrics[metricName])
+        map(data => (data.repos ?? [])[0]?.modularityMetrics?.[metricName])
       );
     }
     return this.http.get<any>(`${this.base}/metrics/${repoId}/${metricName}`);
