@@ -32,6 +32,7 @@ export interface RenderLink extends d3.SimulationLinkDatum<RenderNode> {
   source: RenderNode;
   target: RenderNode;
   value: number;
+  type: string;
 }
 
 /**
@@ -230,21 +231,38 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy, OnChanges
 
     // Render on every tick
     this.simulation.on('tick', () => {
+      this.rebuildLinks();
       this.updateArrowMarkers();
       this.updateLinksForView(gLinks);
-      this.rebuildLinks();
       this.updateNodes(gNodes);
       this.drawEnclosures(gEnclosures, this.currentEnclosures);
     });
   }
 
   /**
-   * Renders/updates link lines with color based on coupling intensity.
+   * Renders/updates link lines with color based on coupling intensity and value labels.
    */
   private updateLinksForView(layer: any) {
-    layer.selectAll('line')
-      .data(this.links)
-      .join('line')
+    const linkGroups = layer.selectAll('g.link')
+      .data(this.links, (d: any) => `${d.source.id}-${d.type}-${d.target.id}`);
+
+    const linkEnter = linkGroups.enter().append('g').attr('class', 'link');
+
+    linkEnter.append('line');
+    linkEnter.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '-4')
+      .style('font-size', '9px')
+      .style('font-weight', 'bold')
+      .style('fill', '#ef4444')
+      .style('pointer-events', 'none')
+      .style('paint-order', 'stroke')
+      .style('stroke', '#ffffff')
+      .style('stroke-width', '2px');
+
+    const merged = linkGroups.merge(linkEnter);
+
+    merged.select('line')
       .attr('stroke', (d: any) => this.getLinkColor(d.value))
       .attr('stroke-opacity', D3_CONFIG.LINK.OPACITY)
       .attr('marker-end', (d: any) => `url(#arrowhead-${this.getLinkColor(d.value).replace('#', '')})`)
@@ -252,6 +270,13 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy, OnChanges
       .attr('y1', (d: any) => d.source.y)
       .attr('x2', (d: any) => this.shortenLine(d.source, d.target).x)
       .attr('y2', (d: any) => this.shortenLine(d.source, d.target).y);
+
+    merged.select('text')
+      .text((d: any) => d.value)
+      .attr('x', (d: any) => (d.source.x + d.target.x) / 2)
+      .attr('y', (d: any) => (d.source.y + d.target.y) / 2);
+
+    linkGroups.exit().remove();
   }
 
   /**
@@ -411,6 +436,16 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy, OnChanges
     const visibleNodeMap = new Map(this.nodes.map(n => [n.id, n]));
     const newLinks = new Map<string, RenderLink>();
 
+    // Determine view level: when only DIRECTORY nodes are visible,
+    // show deduplicated module-level links. Once any non-directory
+    // (FILE/CLASS/FUNCTION) appears, show file-level links.
+    const isModuleView = this.nodes.every(n => n.type === 'DIRECTORY');
+
+    // Filter links by aggregation level
+    const activeLinks = isModuleView
+      ? this.allLinks.filter(l => l.level === 'module')
+      : this.allLinks.filter(l => !l.level || l.level === 'file');
+
     const findVisible = (id: string): string | undefined => {
       if (visibleNodeIds.has(id)) return id;
       let curr = this.allNodesMap.get(id);
@@ -421,20 +456,21 @@ export abstract class BaseGraphComponent implements OnInit, OnDestroy, OnChanges
       return undefined;
     };
 
-    this.allLinks.forEach(l => {
+    activeLinks.forEach(l => {
       const sourceId = findVisible(l.source as string);
       const targetId = findVisible(l.target as string);
 
       if (sourceId && targetId && sourceId !== targetId) {
-        const key = `${sourceId}-${targetId}`;
+        const key = `${sourceId}-${l.type}-${targetId}`;
         if (!newLinks.has(key)) {
           newLinks.set(key, {
             source: visibleNodeMap.get(sourceId)!,
             target: visibleNodeMap.get(targetId)!,
-            value: 1
+            value: l.value,
+            type: l.type
           });
         } else {
-          newLinks.get(key)!.value++;
+          newLinks.get(key)!.value += l.value;
         }
       }
     });

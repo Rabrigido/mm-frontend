@@ -34,6 +34,7 @@ export class GraphDataService {
       classCoupling: req('class-coupling'),
       funcs: req('functions-per-file'),
       funcCoupling: req('function-coupling'),
+      fileCoupling: req('file-coupling'),
     }).pipe(
       map(data => this.buildGraph(data))
     );
@@ -46,7 +47,9 @@ export class GraphDataService {
     const { nodesMap, classToFilesMap, functionToFileMap } =
       this.hierarchyBuilder.buildHierarchy(data);
 
-    const links = this.linkAggregator.buildAllLinks(data, nodesMap, classToFilesMap, functionToFileMap);
+    const links = this.linkAggregator.buildAllLinks(
+      data, nodesMap, classToFilesMap, functionToFileMap, data.fileCoupling?.result
+    );
 
     return { nodes: Array.from(nodesMap.values()), links };
   }

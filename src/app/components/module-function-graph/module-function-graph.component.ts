@@ -45,8 +45,7 @@ export class ModuleFunctionGraphComponent extends BaseGraphComponent {
       DIRECTORY: 35,
       FILE: 20,
       CLASS: 12,
-      FUNCTION: 6,
-      MODULE: 20
+      FUNCTION: 6
     };
   }
 

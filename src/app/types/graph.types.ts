@@ -74,6 +74,9 @@ export interface GraphLink {
 
   /** Real coupling intensity */
   couplingValue?: number;
+
+  /** Aggregation level: 'file' (default, individual imports) or 'module' (deduplicated by directory) */
+  level?: 'file' | 'module';
 }
 
 /**

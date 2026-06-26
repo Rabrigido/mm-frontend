@@ -10,13 +10,12 @@ export type MetricData = Record<string, number | Record<string, any> | any[]>;
 
 /**
  * File-level coupling metrics
+ * Backend returns arrays of file paths per file-dependency relationship
  */
 export interface FileCouplingData {
   [filePath: string]: {
-    fanIn: number;
-    fanOut: number;
-    imports?: string[];
-    exportedTo?: string[];
+    fanIn: string[];
+    fanOut: string[];
   };
 }
 
